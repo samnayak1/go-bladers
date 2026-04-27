@@ -17,3 +17,15 @@ vault kv put secret/gobladers \
 
 vault secrets list -detailed
 vault kv get secret/gobladers
+
+
+
+http://localhost:8080/stat
+
+http://<domain>/live/<streamKey>.m3u8
+
+TODO
+1. Fix the folder structure
+2. See why the video isnt playing
+3. Auth the person who can play
+4. Save recording

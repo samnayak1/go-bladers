@@ -7,7 +7,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { verifyToken } from "../middleware/auth.middleware";
-import User from "../models/user";
+import User from "../models/user.model";
 import crypto from "crypto";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
@@ -181,24 +181,65 @@ router.post("/refresh", async (req, res) => {
 
 
   // Public route - nginx-rtmp auth
-router.post("/auth/publish", async (req, res) => {
+router.post("/publish", async (req, res) => {
+
+  /**{
+express-app  |   app: 'stream',
+express-app  |   flashver: 'FMLE/3.0 (compatible; FMSc/1.0)',
+express-app  |   swfurl: 'rtmp://localhost:1935/stream',
+express-app  |   tcurl: 'rtmp://localhost:1935/stream',
+express-app  |   pageurl: '',
+express-app  |   addr: '172.18.0.1',
+express-app  |   clientid: '8',
+express-app  |   call: 'publish',
+express-app  |   name: '4a56b1099281a28beb011704eaa219b9',
+express-app  |   type: 'live'
+express-app  | } */
+    console.log("PUBLISH BODY:", req.body);
     const { name } = req.body;
     const user = await User.findOne({ streamKey: name });
     if (!user) return res.sendStatus(403);
+    if (user.isLive) return res.sendStatus(403);
+
+  // Mark as live
+  await User.findOneAndUpdate({ streamKey: name }, { isLive: true });
     return res.sendStatus(200);
   });
 
 
-  router.post("/auth/publish-done",async (req, res) => {
-    console.log("Publish done callback received:",req.body);     
+  router.post("/publish-done",async (req, res) => {
+    const { name } = req.body;
+  await User.findOneAndUpdate({ streamKey: name }, { isLive: false });
+    console.log("Publish done callback received:",req.body);  
+    
+    /*{
+express-app  |   app: 'hls',
+express-app  |   flashver: 'FMLE/3.0 (compatible; Lavf59.27',
+express-app  |   swfurl: '',
+express-app  |   tcurl: 'rtmp://localhost:1935/hls',
+express-app  |   pageurl: '',
+express-app  |   addr: '127.0.0.1',
+express-app  |   clientid: '11',
+express-app  |   call: 'done',
+express-app  |   name: '4a56b1099281a28beb011704eaa219b9_720p2628kbs/ '4a56b1099281a28beb011704eaa219b9_480p1128kbs/'4a56b1099281a28beb011704eaa219b9_360p878kbs'
+express-app  | }* */
     return res.sendStatus(200);
   });
+
+   router.post("/play",async (req, res) => {
+    console.log("auth play done callback received:",req.body);     
+    return res.sendStatus(200);
+  });
+
+   router.post("/done",async (req, res) => {
+    console.log("done play done callback received:",req.body);     
+    return res.sendStatus(200);
+  });
+
+
+
+
   
-router.post("/auth/publish", (req, res) => {
-  console.log("PUBLISH:", req.query);
-  console.log("PUBLISH BODY:", req.body);
-  res.sendStatus(200);
-});
 
 
 

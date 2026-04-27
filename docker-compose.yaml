@@ -23,8 +23,12 @@ services:
     depends_on:
       mongo:
         condition: service_started
-      vault:
-        condition: service_started
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
+      - COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}
+      - COGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}
+      - AWS_REGION=${AWS_REGION}
 
   mongo:
     image: mongo:7
@@ -33,24 +37,10 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    depends_on:
-      - vault
     environment:
       - MONGO_INITDB_DATABASE=streamdb
 
-  vault:
-    image: hashicorp/vault:1.13.3
-    container_name: vault
-    ports:
-      - "8200:8200"      #TODO: dont expose port
-    volumes:
-      - vault_data:/vault/data
-      - ./vault.hcl:/vault/config/vault.hcl
-    entrypoint: vault server -config=/vault/config/vault.hcl
-    cap_add:
-      - IPC_LOCK
-   
+
 
 volumes:
   mongo_data:
-  vault_data:
