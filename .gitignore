@@ -1,0 +1,6 @@
+.env
+*.env
+hls/
+node_modules/
+dist/
+*.log
