@@ -5,6 +5,9 @@ export interface AppSecrets {
   COGNITO_USER_POOL_ID: string;
   COGNITO_CLIENT_ID: string;
   COGNITO_CLIENT_SECRET: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
+  S3_BUCKET: string;
 }
 
 export const getSecrets = async (): Promise<AppSecrets> => {
@@ -27,5 +30,8 @@ export const getSecrets = async (): Promise<AppSecrets> => {
     COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID!,
     COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID!,
     COGNITO_CLIENT_SECRET: process.env.COGNITO_CLIENT_SECRET!,
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID!,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY!,
+    S3_BUCKET: process.env.S3_BUCKET!,
   };
 };

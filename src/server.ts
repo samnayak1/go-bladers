@@ -4,11 +4,19 @@ import bodyParser from "body-parser";
 import {  initCognito } from "./middleware/auth.middleware";
 import { getSecrets } from "./configs/secrets";
 import Database, { MongoDBStrategy } from "./configs/database";
+import cors from "cors";
 
 import { initAuthRouter } from "./routes/auth.route";
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,  // allow cookies if needed
+}));
 
 const fetchSecretsThenStartInitModule = async () => {
   console.log("Starting bootstrap...");
@@ -28,7 +36,8 @@ const fetchSecretsThenStartInitModule = async () => {
   const authRouter = initAuthRouter(
     process.env.AWS_REGION!,
     secrets.COGNITO_CLIENT_ID,
-    secrets.COGNITO_CLIENT_SECRET
+    secrets.COGNITO_CLIENT_SECRET,
+    secrets.S3_BUCKET
   );
   app.use("/auth", authRouter);
 

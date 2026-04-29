@@ -6,6 +6,7 @@ export interface IUser extends Document {
   streamKey: string;
   createdAt: Date;
   isLive?: boolean;
+  isVerified?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -14,6 +15,7 @@ const UserSchema = new Schema<IUser>({
   streamKey:{ type: String, required: true, unique: true },
   createdAt:{ type: Date, default: Date.now },
   isLive:   { type: Boolean, default: false },
+  isVerified: { type: Boolean, default: false },
 });
 
 export default mongoose.model<IUser>("User", UserSchema);

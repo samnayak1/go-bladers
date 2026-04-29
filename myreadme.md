@@ -19,7 +19,7 @@ vault secrets list -detailed
 vault kv get secret/gobladers
 
 
-
+sudo chmod -R 777 ./hls
 http://localhost:8080/stat
 
 http://<domain>/live/<streamKey>.m3u8

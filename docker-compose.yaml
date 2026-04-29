@@ -19,6 +19,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
+      - ./hls:/opt/data/hls
     command: npm run dev
     depends_on:
       mongo:
