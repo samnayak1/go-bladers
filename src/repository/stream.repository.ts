@@ -1,0 +1,97 @@
+import mongoose from "mongoose";
+import Stream, { IStream } from "../models/stream.model";
+import User from "../models/user.model"
+
+
+export class StreamRepository {
+    async createStream(userName: string, streamKey: string, userId: string): Promise<void> {
+        await Stream.create({
+            name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
+            streamKey,
+            userId,
+            isLive: true,
+        });
+
+        await User.findOneAndUpdate(
+            { streamKey },
+            { isLive: true }
+        );
+    }
+    async findActiveStreamByKey(streamKey: string):
+        Promise<{ name: string; streamKey: string; userId: string; isLive: boolean } | null> {
+        const stream = await Stream.findOne({
+            streamKey: streamKey,
+            isLive: true
+        });
+
+        if (!stream) {
+            return null;
+        }
+        return {
+            name: stream.name,
+            streamKey: stream.streamKey,
+            userId: stream.userId.toString(),
+            isLive: stream.isLive
+        };
+    }
+
+    async findStreamByIdAndUserId(streamId: string, userId: string): Promise<{ streamKey: string; userId: string; recordingKey: string | null } | null> {
+        const stream = await Stream
+            .findOne({ streamId: streamId, userId: userId });
+        if (!stream) return null;
+        return {
+            streamKey: stream.streamKey,
+            userId: stream.userId.toString(),
+            recordingKey: stream.recordingKey || null
+        }
+    }
+
+    async endStream(name: string): Promise<string | null> {
+        let streamId: string | null = null;
+
+        await User.findOneAndUpdate(
+            { streamKey: name },
+            { isLive: false }
+        );
+
+        const stream = await Stream.findOne({ streamKey: name, isLive: true });
+
+        if (stream) {
+            const duration = Math.floor((Date.now() - stream.createdAt.getTime()) / 1000);
+            await Stream.findByIdAndUpdate(
+                stream._id,
+                { isLive: false, endedAt: new Date(), duration }
+            );
+            streamId = stream._id.toString();
+        }
+
+        return streamId;
+    }
+
+    async getStreamsByUserId(userId: string): Promise<{ name: string; streamKey: string; userId: string; isLive: boolean }[]> {
+        const streams = await Stream.find({
+            userId: userId
+        }).sort({ createdAt: -1 });
+
+        return streams.map(stream => ({
+            id: stream._id.toString(),
+            name: stream.name,
+            //TODO: maybe not send streamkey
+            streamKey: stream.streamKey,
+            userId: stream.userId.toString(),
+            isLive: stream.isLive
+        }));
+    }
+
+    async updateStreamRecordingKey(streamId: string, recordingKey: string) {
+        await Stream.findByIdAndUpdate(streamId, {
+            recordingKey: recordingKey,
+        });
+    }
+
+    async getStreamById(streamId: string, userId: string): Promise<IStream | null> {
+        return await Stream.findOne({ _id: streamId, userId });
+    }
+
+
+}

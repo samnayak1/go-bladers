@@ -29,3 +29,5 @@ TODO
 2. See why the video isnt playing
 3. Auth the person who can play
 4. Save recording
+5. schema vaildation
+6. rate limiting

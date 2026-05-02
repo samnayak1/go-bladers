@@ -6,7 +6,9 @@ import { getSecrets } from "./configs/secrets";
 import Database, { MongoDBStrategy } from "./configs/database";
 import cors from "cors";
 
-import { initAuthRouter } from "./routes/auth.route";
+import authRouter from "./routes/auth.route"
+import streamRouter from "./routes/stream.route"
+
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -33,16 +35,11 @@ const fetchSecretsThenStartInitModule = async () => {
   console.log("Cognito initialized");
 
    console.log("Mounting routes...");
-  const authRouter = initAuthRouter(
-    process.env.AWS_REGION!,
-    secrets.COGNITO_CLIENT_ID,
-    secrets.COGNITO_CLIENT_SECRET,
-    secrets.S3_BUCKET
-  );
   app.use("/auth", authRouter);
+  app.use("/stream", streamRouter);
 
 
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT!;
 
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
