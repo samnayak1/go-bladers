@@ -5,11 +5,13 @@
 import { Response } from "express"
 import { AuthRequest } from "../middleware/auth.middleware"
 import { AuthService } from "../services/implementations/auth.service";
+import { UserService } from "../services/implementations/user.service";
 
 
 
 
 const authService = new AuthService();
+const userService=new UserService();
 
 export const signupHandler = async (req: AuthRequest, res: Response) => {
     try {
@@ -129,6 +131,31 @@ export const sessionUserDetailsHandler = async (req: AuthRequest, res: Response)
        }
 
 }
+
+export const getUserDetailsHandler = async (req: AuthRequest, res: Response) => {
+  try {
+    const { username } = req.params as {username:string};
+    const user = await userService.getUserDetails(username);
+    return res.status(200).json({ data: user });
+  } catch (error: any) {
+    console.error("getUserDetailsHandler error:", error.message);
+    return res.status(500).json({ message: "Error fetching user: " + error.message });
+  }
+
+};
+
+export const getContentCreatorsHandler = async (req: AuthRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await userService.getContentCreators(page, limit);
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error("getContentCreatorsHandler error:", error.message);
+    return res.status(500).json({ message: "Error fetching creators: " + error.message });
+  }
+};
 
 
 

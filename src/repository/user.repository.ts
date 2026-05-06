@@ -44,6 +44,27 @@ export class UserRepository {
     return await User.findOne({ streamKey });
 }
 
+async getUserDetails(username: string) {
+  return await User.findOne({ username }, { streamKey: 0 }); 
+  // exclude streamKey
+}
+
+async getContentCreators(page: number, limit: number) {
+  return await User.find(
+    { streamKey: { $exists: true } },
+    { streamKey: 0, password: 0 }  // exclude sensitive fields
+  )
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+}
+
+async getContentCreatorsCount(): Promise<number> {
+  return await User.countDocuments({ streamKey: { $exists: true } });
+}
+
+
+
 }
 
 

@@ -32,6 +32,28 @@ async getUserByStreamKey(streamKey: string): Promise<IUser | null> {
   return await this.userRepository.getUserByStreamKey(streamKey);
 }
 
+async getUserDetails(username: string) {
+  const user = await this.userRepository.getUserDetails(username);
+  if (!user) throw new Error("User not found");
+  return user;
+}
+
+async getContentCreators(page: number, limit: number) {
+  const [creators, total] = await Promise.all([
+    this.userRepository.getContentCreators(page, limit),
+    this.userRepository.getContentCreatorsCount(),
+  ]);
+
+  return {
+    creators,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    hasNext: page * limit < total,
+    hasPrev: page > 1,
+  };
+}
    
     
     

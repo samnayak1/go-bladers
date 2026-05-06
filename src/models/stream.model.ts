@@ -8,6 +8,8 @@ export interface IStream extends Document {
     endedAt?: Date;
     userId: mongoose.Types.ObjectId;
     isLive: boolean;
+
+  //  `recordings/${streamId}
     recordingKey?: string;  
     duration?: number;
 }

@@ -35,16 +35,7 @@ export class StreamRepository {
         };
     }
 
-    async findStreamByIdAndUserId(streamId: string, userId: string): Promise<{ streamKey: string; userId: string; recordingKey: string | null } | null> {
-        const stream = await Stream
-            .findOne({ streamId: streamId, userId: userId });
-        if (!stream) return null;
-        return {
-            streamKey: stream.streamKey,
-            userId: stream.userId.toString(),
-            recordingKey: stream.recordingKey || null
-        }
-    }
+
 
     async endStream(name: string): Promise<string | null> {
         let streamId: string | null = null;
@@ -68,7 +59,7 @@ export class StreamRepository {
         return streamId;
     }
 
-    async getStreamsByUserId(userId: string): Promise<{ name: string; streamKey: string; userId: string; isLive: boolean }[]> {
+    async getStreamsByUserId(userId: string): Promise<{ id: string; name: string; userId: string; isLive: boolean }[]> {
         const streams = await Stream.find({
             userId: userId
         }).sort({ createdAt: -1 });
@@ -77,7 +68,7 @@ export class StreamRepository {
             id: stream._id.toString(),
             name: stream.name,
             //TODO: maybe not send streamkey
-            streamKey: stream.streamKey,
+            //  streamKey: stream.streamKey,
             userId: stream.userId.toString(),
             isLive: stream.isLive
         }));
@@ -89,9 +80,29 @@ export class StreamRepository {
         });
     }
 
-    async getStreamById(streamId: string, userId: string): Promise<IStream | null> {
-        return await Stream.findOne({ _id: streamId, userId });
+    async getStreamById(streamId: string): Promise<IStream | null> {
+        return await Stream.findOne({ _id: streamId}, { streamKey: 0 });
     }
+
+    async getLatestStreams(page: number, limit: number): Promise<IStream[]> {
+        return await Stream.find({
+            isLive: false,
+            recordingKey: { $ne: null },
+        }, { streamKey: 0 })  // exclude streamKey
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate("userId", "username");
+    }
+
+    async getLatestStreamsCount(): Promise<number> {
+        return await Stream.countDocuments({
+            isLive: false,
+            recordingKey: { $ne: null },
+        });
+    }
+
+    
 
 
 }

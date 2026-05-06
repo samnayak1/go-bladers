@@ -1,4 +1,4 @@
-import { Response } from "express"
+import { Response , Request} from "express"
 import { AuthRequest } from "../middleware/auth.middleware"
 import { StreamService } from "../services/implementations/stream.service";
 import { UserService } from "../services/implementations/user.service";
@@ -148,7 +148,7 @@ export const getReplayedm3u8Handler = async (req: AuthRequest, res: Response) =>
         const user = await userService.getUserByUsername(username);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const stream = await streamService.getStreamById(streamId, user.id.toString());
+        const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
 
         const content = await streamService.getS3Content(
@@ -176,7 +176,7 @@ export const getReplayedm3u8VariantHandler = async (req: AuthRequest, res: Respo
         const user = await userService.getUserByUsername(username);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const stream = await streamService.getStreamById(streamId, user.id.toString());
+        const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
 
         const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
@@ -206,7 +206,7 @@ export const getReplayedm3u8SegmentHandler = async (req: AuthRequest, res: Respo
         const user = await userService.getUserByUsername(username);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const stream = await streamService.getStreamById(streamId, user.id.toString());
+        const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
 
         const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
@@ -218,6 +218,19 @@ export const getReplayedm3u8SegmentHandler = async (req: AuthRequest, res: Respo
         return res.status(500).json({ message: "Error fetching segment: " + error.message });
     }
 }
+
+export const getLatestStreamsHandler = async (req: AuthRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await streamService.getLatestStreams(page, limit);
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error("getLatestStreamsHandler error:", error.message);
+    return res.status(500).json({ message: "Error fetching streams: " + error.message });
+  }
+};
 
 export const getAllStreamsOfUserHandler = async (req: AuthRequest, res: Response) => {
     try {
@@ -240,6 +253,22 @@ export const getAllStreamsOfUserHandler = async (req: AuthRequest, res: Response
         return res.status(500).json({ message: "Error fetching streams: " + error.message });
     }
 }
+
+export const getStreamByIdHandler = async (req: Request, res: Response) => {
+  try {
+    const { streamId } = req.params as {streamId:string};
+  
+
+    const stream = await streamService.getStreamById(streamId);
+
+    if (!stream) return res.status(404).json({ message: "Stream not found" });
+
+    return res.status(200).json({ data: stream });
+  } catch (error: any) {
+    console.error("getStreamByIdHandler error:", error.message);
+    return res.status(500).json({ message: "Error fetching stream: " + error.message });
+  }
+};
 
 
 const sendM3u8 = async (res: Response, content?: string | null) => {

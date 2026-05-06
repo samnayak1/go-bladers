@@ -95,6 +95,8 @@ async uploadStreamToStorage(streamKey: string, streamId: string): Promise<void> 
 }
 
 
+
+//function to get playlist file
 public async getM3u8Content(userName:string){
       const user = await this.userRepository.getUserByUsername(userName);
       if(!user){
@@ -175,11 +177,13 @@ public async getVariantContent(variant: string, username: string): Promise<strin
   return content.replace(new RegExp(user.streamKey, "g"), username);
 }
 
+
+//we store the file as HLS_PATH_streamKey_variant.m3u8
 private async getSegmentStreamHelper(variant:string,segment: string, username: string, streamKey: string): Promise<string | null>{
   const actualVariant = variant.replace(new RegExp(username, "g"), streamKey);
-  const segmentPath = path.join(this.HLS_PATH,actualVariant, segment);
+  const segmentPath = path.join(this.HLS_PATH, actualVariant, segment);
 
-  if (!existsSync(segmentPath)) return null;
+  if (!existsSync(segmentPath)) return null; //from their doc, "Returns true if the path exists, false otherwise".
 
   return segmentPath;
 };
@@ -232,9 +236,34 @@ async getAllStreamsOfUser(userId:string){
 }
 
 
-async getStreamById(streamId: string, userId: string): Promise<IStream | null> {
-  return await this.streamRepository.getStreamById(streamId, userId);
+async getStreamById(streamId: string): Promise<IStream | null> {
+  return await this.streamRepository.getStreamById(streamId);
 }
+
+
+
+async getLatestStreams(page: number, limit: number) {
+  const [streams, total] = await Promise.all([
+    this.streamRepository.getLatestStreams(page, limit),
+    this.streamRepository.getLatestStreamsCount(),
+  ]);
+
+  return {
+    streams,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    hasNext: page * limit < total,
+    hasPrev: page > 1,
+  };
+}
+
+
+
+
+
+
 
 
 

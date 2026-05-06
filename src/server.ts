@@ -8,7 +8,7 @@ import cors from "cors";
 
 import authRouter from "./routes/auth.route"
 import streamRouter from "./routes/stream.route"
-
+import userRouter from "./routes/user.route"
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -34,9 +34,11 @@ const fetchSecretsThenStartInitModule = async () => {
   initCognito(secrets.COGNITO_USER_POOL_ID, secrets.COGNITO_CLIENT_ID);
   console.log("Cognito initialized");
 
-   console.log("Mounting routes...");
+
+  console.log("Mounting routes...");
   app.use("/auth", authRouter);
   app.use("/stream", streamRouter);
+  app.use("/user",userRouter);
 
 
   const PORT = process.env.PORT!;
