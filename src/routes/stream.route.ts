@@ -10,6 +10,9 @@ const router = express.Router();
 
 
 router.post("/stream-key/regenerate", verifyToken, regenerateStreamKeyHandler);
+
+
+
 router.post("/publish", publishStreamHandler);
 router.post("/publish-done", endStreamHandler);
 router.post("/play", playStartedHandler);
@@ -31,6 +34,28 @@ router.get("/:username/:segment", getLivem3u8SegmentHandler);
 
 
 // User streams
+
+/**
+ * @swagger
+ * /stream/latest:
+ *   get:
+ *     summary: Get latest streams paginated
+ *     tags: [Stream]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of streams
+ */
 router.get("/latest", getLatestStreamsHandler);
 router.get("/:username", getAllStreamsOfUserHandler);
 

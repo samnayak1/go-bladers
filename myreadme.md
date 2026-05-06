@@ -14,6 +14,7 @@ TODO
 5. schema vaildation
 6. rate limiting
 7. swagger doc
+8. cors
 
 
 

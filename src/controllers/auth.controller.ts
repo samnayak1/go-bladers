@@ -84,8 +84,8 @@ export const refreshTokenHandler = async (req: AuthRequest, res: Response) => {
 
     try {
 
-        const { token } = req.body;
-        const refreshTokenResponsePayload = await authService.refreshToken(token);
+        const { token, userId } = req.body as {token:string, userId:string};
+        const refreshTokenResponsePayload = await authService.refreshToken(token,userId);
 
         return res.status(200)
             .json({
@@ -119,6 +119,7 @@ export const sessionUserDetailsHandler = async (req: AuthRequest, res: Response)
                  username: userData.userName,
                  email: userData.email,
                  streamKey: userData.streamKey,
+                 id:userData.userId
         })
 
 

@@ -9,7 +9,7 @@ export interface IAuthService{
     signIn(email:string, password:string):Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}>;
     confirmUser(email:string, code:string):Promise<boolean>;
     userSessionDetails(token:string):Promise<{email:string, userName:string, streamKey:string}>;
-    refreshToken(token:string):Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}>;
+    refreshToken(token:string,username:string):Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}>;
 
 
 

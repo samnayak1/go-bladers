@@ -5,10 +5,12 @@ import {  initCognito } from "./middleware/auth.middleware";
 import { getSecrets } from "./configs/secrets";
 import Database, { MongoDBStrategy } from "./configs/database";
 import cors from "cors";
+  import swaggerUi from "swagger-ui-express";
 
 import authRouter from "./routes/auth.route"
 import streamRouter from "./routes/stream.route"
 import userRouter from "./routes/user.route"
+import { swaggerSpec } from "./configs/swagger";
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -40,6 +42,9 @@ const fetchSecretsThenStartInitModule = async () => {
   app.use("/stream", streamRouter);
   app.use("/user",userRouter);
 
+
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   const PORT = process.env.PORT!;
 

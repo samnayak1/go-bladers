@@ -125,11 +125,11 @@ async userSessionDetails(email: string): Promise<{ email: string; userName: stri
     }
 
 
-    async refreshToken(token: string): Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}> {
-           const decoded = jwt.decode(token) as JwtPayload;
-            const username = decoded?.sub;
+    async refreshToken(token: string,userId:string): Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}> {
+      
 
-    if (!username) {
+
+    if (!userId) {
       throw new Error("Invalid token: missing sub claim");
     }
 
@@ -139,7 +139,7 @@ async userSessionDetails(email: string): Promise<{ email: string; userName: stri
         ClientId: this.clientId,
         AuthParameters: {
           REFRESH_TOKEN: token,
-          SECRET_HASH: this.generateSecretHash(username, this.clientId, this.clientSecret), // use sub not email
+          SECRET_HASH: this.generateSecretHash(userId, this.clientId, this.clientSecret), // use sub not email
         },
       })
     );
