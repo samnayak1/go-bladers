@@ -45,7 +45,7 @@ export class StreamRepository {
             { isLive: false }
         );
 
-        const stream = await Stream.findOne({ streamKey: name, isLive: true });
+        const stream = await Stream.findOne({ streamKey: name, isLive: true }).sort({ createdAt: -1 });
 
         if (stream) {
             const duration = Math.floor((Date.now() - stream.createdAt.getTime()) / 1000);
@@ -59,20 +59,15 @@ export class StreamRepository {
         return streamId;
     }
 
-    async getStreamsByUserId(userId: string): Promise<{ id: string; name: string; userId: string; isLive: boolean }[]> {
+    async getStreamsByUserId(userId: string): Promise<IStream[]> {
         const streams = await Stream.find({
             userId: userId
-        }).sort({ createdAt: -1 });
+        },{streamKey:0}).sort({ createdAt: -1 });
 
-        return streams.map(stream => ({
-            id: stream._id.toString(),
-            name: stream.name,
-            //TODO: maybe not send streamkey
-            //  streamKey: stream.streamKey,
-            userId: stream.userId.toString(),
-            isLive: stream.isLive
-        }));
-    }
+
+        return streams;
+
+   }
 
     async updateStreamRecordingKey(streamId: string, recordingKey: string) {
         await Stream.findByIdAndUpdate(streamId, {
@@ -81,7 +76,7 @@ export class StreamRepository {
     }
 
     async getStreamById(streamId: string): Promise<IStream | null> {
-        return await Stream.findOne({ _id: streamId}, { streamKey: 0 });
+        return await Stream.findOne({ _id: streamId});
     }
 
     async getLatestStreams(page: number, limit: number): Promise<IStream[]> {
@@ -101,6 +96,10 @@ export class StreamRepository {
             recordingKey: { $ne: null },
         });
     }
+
+    async updateThumbnailKey(streamId: string, thumbnailKey: string): Promise<void> {
+           await Stream.findByIdAndUpdate(streamId, { thumbnailKey });
+     }
 
     
 

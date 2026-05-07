@@ -12,6 +12,8 @@ export interface IStream extends Document {
   //  `recordings/${streamId}
     recordingKey?: string;  
     duration?: number;
+
+    thumbnailKey?: string;
 }
 
 const StreamSchema = new Schema<IStream>({
@@ -31,6 +33,7 @@ const StreamSchema = new Schema<IStream>({
   isLive: { type: Boolean, default: true },
   recordingKey: { type: String, default: null },
   duration: { type: Number, default: null },
+  thumbnailKey:{ type:String, required:false,default: null}
 });
 
 export default mongoose.model<IStream>("Stream", StreamSchema);

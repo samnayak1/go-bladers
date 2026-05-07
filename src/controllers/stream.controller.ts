@@ -1,4 +1,4 @@
-import { Response , Request} from "express"
+import { Response, Request } from "express"
 import { AuthRequest } from "../middleware/auth.middleware"
 import { StreamService } from "../services/implementations/stream.service";
 import { UserService } from "../services/implementations/user.service";
@@ -38,13 +38,9 @@ export const publishStreamHandler = async (req: AuthRequest, res: Response) => {
 
     try {
 
-       const {name}=req.body;
-       
+        const { name } = req.body;
 
-
-
-
-        await streamService.startStream(name);
+       await streamService.startStream(name);
 
 
         //TODO: return something meaningful
@@ -55,7 +51,7 @@ export const publishStreamHandler = async (req: AuthRequest, res: Response) => {
 
     } catch (error: any) {
 
-        console.error("an error has occured:",error.message)
+        console.error("an error has occured:", error.message)
 
         return res.status(500)
             .json({ message: "Error publishing stream" + error.message })
@@ -77,7 +73,7 @@ export const endStreamHandler = async (req: AuthRequest, res: Response) => {
 
 
     } catch (error: any) {
-       console.log("ERROR: ",error.message);
+        console.log("ERROR: ", error.message);
         return res.status(500)
             .json({ message: "Error publishing stream" + error.message })
 
@@ -150,7 +146,7 @@ export const getReplayedm3u8Handler = async (req: AuthRequest, res: Response) =>
 
         const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
-
+        
         const content = await streamService.getS3Content(
             `${stream.recordingKey}/${stream.streamKey}.m3u8`,
             stream.streamKey,
@@ -220,30 +216,30 @@ export const getReplayedm3u8SegmentHandler = async (req: AuthRequest, res: Respo
 }
 
 export const getLatestStreamsHandler = async (req: AuthRequest, res: Response) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
 
-    const result = await streamService.getLatestStreams(page, limit);
-    return res.status(200).json(result);
-  } catch (error: any) {
-    console.error("getLatestStreamsHandler error:", error.message);
-    return res.status(500).json({ message: "Error fetching streams: " + error.message });
-  }
+        const result = await streamService.getLatestStreams(page, limit);
+        return res.status(200).json(result);
+    } catch (error: any) {
+        console.error("getLatestStreamsHandler error:", error.message);
+        return res.status(500).json({ message: "Error fetching streams: " + error.message });
+    }
 };
 
 export const getAllStreamsOfUserHandler = async (req: AuthRequest, res: Response) => {
     try {
-        const {username}=req.params as {username:string};
+        const { username } = req.params as { username: string };
 
 
 
 
 
         const userData = await userService.getUserByUsername(username);
-        if(!userData){
+        if (!userData) {
             return res.status(404)
-               .json({message:"user not found"});
+                .json({ message: "user not found" });
         }
         const streams = await streamService.getAllStreamsOfUser(userData.id);
 
@@ -254,21 +250,7 @@ export const getAllStreamsOfUserHandler = async (req: AuthRequest, res: Response
     }
 }
 
-export const getStreamByIdHandler = async (req: Request, res: Response) => {
-  try {
-    const { streamId } = req.params as {streamId:string};
-  
 
-    const stream = await streamService.getStreamById(streamId);
-
-    if (!stream) return res.status(404).json({ message: "Stream not found" });
-
-    return res.status(200).json({ data: stream });
-  } catch (error: any) {
-    console.error("getStreamByIdHandler error:", error.message);
-    return res.status(500).json({ message: "Error fetching stream: " + error.message });
-  }
-};
 
 
 const sendM3u8 = async (res: Response, content?: string | null) => {
@@ -283,11 +265,11 @@ const sendM3u8 = async (res: Response, content?: string | null) => {
 };
 
 const pipeS3Stream = async (res: Response, key: string) => {
-  const response = await streamService.getS3Object(key);
-  res.setHeader("Content-Type", "video/mp2t");
-  res.setHeader("Cache-Control", "public, max-age=31536000");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  (response.Body as any).pipe(res);
+    const response = await streamService.getS3Object(key);
+    res.setHeader("Content-Type", "video/mp2t");
+    res.setHeader("Cache-Control", "public, max-age=31536000");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    (response.Body as any).pipe(res);
 };
 
 

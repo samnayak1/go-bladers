@@ -3,7 +3,7 @@ import { Upload } from "@aws-sdk/lib-storage";
 import path from "path";
 import s3 from "../../configs/storageBucket";
 
-import { createReadStream, existsSync, readdirSync } from "fs";
+import { createReadStream, existsSync, readdirSync, mkdirSync, statSync } from "fs";
 import { readFile } from "fs/promises";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { StreamRepository } from "../../repository/stream.repository";
@@ -11,7 +11,11 @@ import { StreamRepository } from "../../repository/stream.repository";
 import { UserRepository } from "../../repository/user.repository";
 import { IStream } from "../../models/stream.model";
 
+import { exec } from "child_process";
+import { promisify } from "util";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+const execAsync = promisify(exec);
 
 
 export class StreamService {
@@ -20,12 +24,20 @@ export class StreamService {
      userRepository:UserRepository
      bucketName:string;
      HLS_PATH:string;
+     THUMBNAIL_PATH: string;
+     
 
      constructor(){
          this.streamRepository=new StreamRepository();
          this.bucketName=process.env.S3_BUCKET!;
          this.HLS_PATH="/opt/data/hls";
          this.userRepository=new UserRepository();
+         this.THUMBNAIL_PATH = "/opt/data/thumbnails";
+
+         //create thumbnail directory if it does not exist
+         if (!existsSync(this.THUMBNAIL_PATH)) {
+            mkdirSync(this.THUMBNAIL_PATH, { recursive: true });
+         }
 
      }
 
@@ -47,9 +59,9 @@ private collectStreamFiles(streamKey: string): string[] {
   for (const variant of variants) {
     const variantPath = path.join(this.HLS_PATH, variant);
     if (existsSync(variantPath)) {
-      const variantFiles = readdirSync(variantPath).map(f =>
-        path.join(variantPath, f)
-      );
+      const variantFiles = readdirSync(variantPath)
+        .filter(f => !f.endsWith(".bak"))  // ignore .bak files
+        .map(f => path.join(variantPath, f));
       files.push(...variantFiles);
     }
   }
@@ -57,8 +69,7 @@ private collectStreamFiles(streamKey: string): string[] {
   return files;
 }
 
-private async uploadFileToS3(filePath: string, streamId: string, bucket: string): Promise<void> {
-  const s3Key = `recordings/${streamId}/${path.relative(this.HLS_PATH, filePath)}`;
+private async uploadFileToS3(filePath: string, s3Key: string, bucket: string, contentType: string): Promise<void> {
 
   const upload = new Upload({
     client: s3,
@@ -66,9 +77,7 @@ private async uploadFileToS3(filePath: string, streamId: string, bucket: string)
       Bucket: bucket,
       Key: s3Key,
       Body: createReadStream(filePath),
-      ContentType: filePath.endsWith(".m3u8")
-        ? "application/vnd.apple.mpegurl"
-        : "video/mp2t",
+      ContentType: contentType,
     },
   });
 
@@ -80,12 +89,17 @@ private async uploadAllFiles(files: string[], streamId: string, bucket: string):
   console.log(`Uploading ${files.length} files to S3 for stream ${streamId}`);
   
   await Promise.all(
-    files.map(filePath => this.uploadFileToS3(filePath, streamId, bucket))
+    files.map(filePath => {
+     const s3Key = `recordings/${streamId}/${path.relative(this.HLS_PATH, filePath)}`;
+      this.uploadFileToS3(filePath, s3Key, bucket,
+      filePath.endsWith(".m3u8")
+        ? "application/vnd.apple.mpegurl"
+        : "video/mp2t")})
   );
 }
 
 async uploadStreamToStorage(streamKey: string, streamId: string): Promise<void> {
-  const bucket = process.env.S3_BUCKET!;
+  const bucket = this.bucketName;
 
   const files = this.collectStreamFiles(streamKey);
   await this.uploadAllFiles(files, streamId, bucket);
@@ -225,16 +239,30 @@ async endStream(streamKey:string){
      await this.uploadStreamToStorage(streamKey, streamId).catch(err =>
           console.error("S3 upload error:", err)
         );
+
+    await this.uploadThumbnailOfStream(streamKey,streamId);
     }
 
 }
 
-async getAllStreamsOfUser(userId:string){
-     
-     const streams=await this.streamRepository.getStreamsByUserId(userId);
-     return streams;
+private async uploadThumbnailOfStream(name:string, streamId:string){
+ Promise.all([
+      this.uploadStreamToStorage(name, streamId).catch(err =>
+        console.error("S3 upload error:", err)
+      ),
+      this.generateAndUploadThumbnail(name, streamId).then(async (thumbnailKey) => {
+        if (thumbnailKey) {
+          await this.streamRepository.updateThumbnailKey(streamId!, thumbnailKey);
+        }
+      }).catch((err: any) => console.error("Thumbnail error:", err)),
+    ]);
+
 }
 
+async getAllStreamsOfUser(userId: string) {
+  const streams = await this.streamRepository.getStreamsByUserId(userId);
+  return await Promise.all(streams.map(stream => this.attachThumbnailUrl(stream)));
+}
 
 async getStreamById(streamId: string): Promise<IStream | null> {
   return await this.streamRepository.getStreamById(streamId);
@@ -248,8 +276,13 @@ async getLatestStreams(page: number, limit: number) {
     this.streamRepository.getLatestStreamsCount(),
   ]);
 
+  const streamsWithThumbnails = await Promise.all(
+    streams.map(stream => this.attachThumbnailUrl(stream))
+  );
+  
+
   return {
-    streams,
+    streams:streamsWithThumbnails,
     total,
     page,
     limit,
@@ -259,12 +292,64 @@ async getLatestStreams(page: number, limit: number) {
   };
 }
 
+private async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+    return await getSignedUrl(s3, command, { expiresIn });
+  }
+
+private async attachThumbnailUrl(stream: IStream): Promise<any> {
+    const streamObj = stream.toObject();
+    streamObj.thumbnailUrl = stream.thumbnailKey
+      ? await this.getSignedUrl(stream.thumbnailKey)
+      : null;
+    return streamObj;
+  }
 
 
 
+  async generateAndUploadThumbnail(streamKey: string, streamId: string): Promise<string | null> {
+    const outputPath = path.join(this.THUMBNAIL_PATH, `${streamId}.jpg`);
+    const thumbnailDir = path.join(this.THUMBNAIL_PATH);
+    const m3u8Path = path.join(this.HLS_PATH, `${streamKey}.m3u8`);
+
+    if (!existsSync(m3u8Path)) return null;
+
+    try {
+
+        if (!existsSync(thumbnailDir)) {
+           mkdirSync(thumbnailDir, { recursive: true });
+       }
+    
+      //Grab one frame (vframes 1) of the  4th second of the thumbnail and scale to  1280x720.
+      await execAsync(
+        `ffmpeg -y -i ${m3u8Path} -ss 00:00:04 -vframes 1 -q:v 2 -vf scale=1280:720 ${outputPath}`
+      );
 
 
+  
 
 
+      const s3Key = `thumbnails/${streamId}.jpg`;
+     await this.uploadFileToS3(outputPath, s3Key, this.bucketName, "image/jpeg");
 
+      console.log(`Thumbnail uploaded to S3: ${s3Key}`);
+
+      return s3Key;
+    } catch (err) {
+      console.error("Error generating thumbnail:", err);
+      return null;
+    }
+  }
 }
+
+
+
+
+
+
+
+
+

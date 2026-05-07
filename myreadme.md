@@ -106,3 +106,12 @@ For each variant, you are defining specific rules for the video (-v) and audio (
 Why this matters: HLS can only switch between quality levels at a keyframe.
 
 -preset superfast: Tells FFmpeg to prioritize encoding speed over file size—critical for live streaming to prevent lag.
+
+
+
+A .bak file is a backup file. nginx-rtmp creates them temporarily when writing HLS playlist files (.m3u8).
+The process looks like this:
+1. nginx-rtmp wants to update index.m3u8
+2. Renames existing index.m3u8 → index.m3u8.bak  (backup)
+3. Writes new index.m3u8
+4. Deletes index.m3u8.bak
