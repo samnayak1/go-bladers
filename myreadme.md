@@ -20,6 +20,11 @@ TODO
 
 
 #################################
+Installation
+1. Install docker & docker compose
+2. to run docker compose up --build
+
+
 Resolution: Number of pixels one image if video has
 Full HD: 1080p (1920 X 1080)
 Ultra HD: 4k (3840 X 2160)
