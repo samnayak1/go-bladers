@@ -17,23 +17,6 @@ export class StreamRepository {
             { isLive: true }
         );
     }
-    async findActiveStreamByKey(streamKey: string):
-        Promise<{ name: string; streamKey: string; userId: string; isLive: boolean } | null> {
-        const stream = await Stream.findOne({
-            streamKey: streamKey,
-            isLive: true
-        });
-
-        if (!stream) {
-            return null;
-        }
-        return {
-            name: stream.name,
-            streamKey: stream.streamKey,
-            userId: stream.userId.toString(),
-            isLive: stream.isLive
-        };
-    }
 
 
 

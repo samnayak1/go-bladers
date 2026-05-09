@@ -7,7 +7,6 @@ import { createReadStream } from "fs";
 
 const streamService = new StreamService()
 const userService = new UserService();
-const authService = new AuthService();
 
 export const regenerateStreamKeyHandler = async (req: AuthRequest, res: Response) => {
 
@@ -99,7 +98,7 @@ export const playEndedHandler = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const getLivem3u8VariantHandler = async (req: AuthRequest, res: Response) => {
+export const getLivem3u8VariantHandler = async (req: Request, res: Response) => {
     try {
         const { username, variant } = req.params as { username: string, variant: string };
         const content = await streamService.getVariantContent(variant, username);
@@ -110,7 +109,7 @@ export const getLivem3u8VariantHandler = async (req: AuthRequest, res: Response)
     }
 }
 
-export const getLivem3u8SegmentHandler = async (req: AuthRequest, res: Response) => {
+export const getLivem3u8SegmentHandler = async (req: Request, res: Response) => {
     try {
         const { username, variant, segment } = req.params as { username: string, variant: string, segment: string };
         const segmentPath = await streamService.getSegmentStream(variant, segment, username);
@@ -126,7 +125,7 @@ export const getLivem3u8SegmentHandler = async (req: AuthRequest, res: Response)
     }
 }
 
-export const getLive3u8Hanlder = async (req: AuthRequest, res: Response) => {
+export const getLive3u8Hanlder = async (req: Request, res: Response) => {
     try {
         const { username } = req.params as { username: string };
         const content = await streamService.getM3u8Content(username);
@@ -137,7 +136,7 @@ export const getLive3u8Hanlder = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const getReplayedm3u8Handler = async (req: AuthRequest, res: Response) => {
+export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
     try {
         const { username, streamId } = req.params as { username: string, streamId: string };
 
@@ -161,7 +160,7 @@ export const getReplayedm3u8Handler = async (req: AuthRequest, res: Response) =>
     }
 }
 
-export const getReplayedm3u8VariantHandler = async (req: AuthRequest, res: Response) => {
+export const getReplayedm3u8VariantHandler = async (req: Request, res: Response) => {
     try {
         const { username, streamId, variant } = req.params as {
             username: string,
@@ -190,7 +189,7 @@ export const getReplayedm3u8VariantHandler = async (req: AuthRequest, res: Respo
     }
 }
 
-export const getReplayedm3u8SegmentHandler = async (req: AuthRequest, res: Response) => {
+export const getReplayedm3u8SegmentHandler = async (req: Request, res: Response) => {
     try {
         const { username, streamId, variant, segment } = req.params as {
             username: string,
@@ -204,7 +203,7 @@ export const getReplayedm3u8SegmentHandler = async (req: AuthRequest, res: Respo
 
         const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
-
+       //the stream is stored with prefix of streamKey and hence replace the incoming streamId request with streamKey
         const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
         const key = `${stream.recordingKey}/${actualVariant}/${segment}`;
 
@@ -215,11 +214,10 @@ export const getReplayedm3u8SegmentHandler = async (req: AuthRequest, res: Respo
     }
 }
 
-export const getLatestStreamsHandler = async (req: AuthRequest, res: Response) => {
+export const getLatestStreamsHandler = async (req: Request, res: Response) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-
         const result = await streamService.getLatestStreams(page, limit);
         return res.status(200).json(result);
     } catch (error: any) {
@@ -228,14 +226,9 @@ export const getLatestStreamsHandler = async (req: AuthRequest, res: Response) =
     }
 };
 
-export const getAllStreamsOfUserHandler = async (req: AuthRequest, res: Response) => {
+export const getAllStreamsOfUserHandler = async (req: Request, res: Response) => {
     try {
         const { username } = req.params as { username: string };
-
-
-
-
-
         const userData = await userService.getUserByUsername(username);
         if (!userData) {
             return res.status(404)

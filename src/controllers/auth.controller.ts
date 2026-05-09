@@ -2,7 +2,7 @@
 
 
 
-import { Response } from "express"
+import { Response,Request } from "express"
 import { AuthRequest } from "../middleware/auth.middleware"
 import { AuthService } from "../services/implementations/auth.service";
 import { UserService } from "../services/implementations/user.service";
@@ -57,7 +57,7 @@ export const confirmRegistrationCodeHandler = async (req: AuthRequest, res: Resp
 
 
 
-export const loginHandler = async (req: AuthRequest, res: Response) => {
+export const loginHandler = async (req: Request, res: Response) => {
 
     try {
 
@@ -133,7 +133,7 @@ export const sessionUserDetailsHandler = async (req: AuthRequest, res: Response)
 
 }
 
-export const getUserDetailsHandler = async (req: AuthRequest, res: Response) => {
+export const getUserDetailsHandler = async (req: Request, res: Response) => {
   try {
     const { username } = req.params as {username:string};
     const user = await userService.getUserDetails(username);
@@ -145,7 +145,7 @@ export const getUserDetailsHandler = async (req: AuthRequest, res: Response) => 
 
 };
 
-export const getContentCreatorsHandler = async (req: AuthRequest, res: Response) => {
+export const getContentCreatorsHandler = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;

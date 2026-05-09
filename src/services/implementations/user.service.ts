@@ -2,6 +2,7 @@ import { IUser } from "../../models/user.model";
 import { UserRepository } from "../../repository/user.repository";
 
 import crypto from "crypto"
+import { toUserDto } from "../../types/dto/user.dto";
 
 export class UserService{
 
@@ -24,7 +25,7 @@ export class UserService{
 
       }
 
-     async getUserByUsername(username: string) {
+async getUserByUsername(username: string) {
   return await this.userRepository.getUserByUsername(username);
 }
 
@@ -35,7 +36,7 @@ async getUserByStreamKey(streamKey: string): Promise<IUser | null> {
 async getUserDetails(username: string) {
   const user = await this.userRepository.getUserDetails(username);
   if (!user) throw new Error("User not found");
-  return user;
+  return toUserDto(user);
 }
 
 async getContentCreators(page: number, limit: number) {
@@ -44,8 +45,10 @@ async getContentCreators(page: number, limit: number) {
     this.userRepository.getContentCreatorsCount(),
   ]);
 
+
+
   return {
-    creators,
+    creators:creators.map(user => toUserDto(user)),
     total,
     page,
     limit,

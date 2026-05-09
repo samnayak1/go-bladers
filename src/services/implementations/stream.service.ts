@@ -14,6 +14,7 @@ import { IStream } from "../../models/stream.model";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { StreamResponseDto, toStreamDto } from "../../types/dto/stream.dto";
 
 const execAsync = promisify(exec);
 
@@ -259,9 +260,17 @@ private async uploadThumbnailOfStream(name:string, streamId:string){
 
 }
 
-async getAllStreamsOfUser(userId: string) {
+async getAllStreamsOfUser(userId: string):Promise<StreamResponseDto[]> {
   const streams = await this.streamRepository.getStreamsByUserId(userId);
-  return await Promise.all(streams.map(stream => this.attachThumbnailUrl(stream)));
+   const streamsWithThumbnails = await Promise.all(
+    streams.map(stream =>
+      this.attachThumbnailUrl(stream)
+    )
+  );
+
+  return streamsWithThumbnails.map(stream =>
+    toStreamDto(stream)
+  );
 }
 
 async getStreamById(streamId: string): Promise<IStream | null> {
@@ -269,20 +278,28 @@ async getStreamById(streamId: string): Promise<IStream | null> {
 }
 
 
+async getLatestStreams(
+  page: number,
+  limit: number
+) {
 
-async getLatestStreams(page: number, limit: number) {
   const [streams, total] = await Promise.all([
     this.streamRepository.getLatestStreams(page, limit),
     this.streamRepository.getLatestStreamsCount(),
   ]);
 
   const streamsWithThumbnails = await Promise.all(
-    streams.map(stream => this.attachThumbnailUrl(stream))
+    streams.map(stream =>
+      this.attachThumbnailUrl(stream)
+    )
   );
-  
+
+  const dtoStreams = streamsWithThumbnails.map(stream =>
+    toStreamDto(stream)
+  );
 
   return {
-    streams:streamsWithThumbnails,
+    streams: dtoStreams,
     total,
     page,
     limit,

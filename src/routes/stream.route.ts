@@ -15,6 +15,8 @@ router.post("/stream-key/regenerate", verifyToken, regenerateStreamKeyHandler);
 
 router.post("/publish", publishStreamHandler);
 router.post("/publish-done", endStreamHandler);
+
+
 router.post("/play", playStartedHandler);
 router.post("/done", playEndedHandler);
 
