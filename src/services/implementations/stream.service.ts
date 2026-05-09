@@ -266,11 +266,12 @@ async getAllStreamsOfUser(userId: string):Promise<StreamResponseDto[]> {
     streams.map(stream =>
       this.attachThumbnailUrl(stream)
     )
-  );
-
-  return streamsWithThumbnails.map(stream =>
+  ) as IStream[];
+  
+  const streamDtos= await Promise.all(streamsWithThumbnails.map(stream =>
     toStreamDto(stream)
-  );
+  ));
+  return streamDtos;
 }
 
 async getStreamById(streamId: string): Promise<IStream | null> {

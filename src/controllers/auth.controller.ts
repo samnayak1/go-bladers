@@ -73,7 +73,8 @@ export const loginHandler = async (req: Request, res: Response) => {
                 idToken: signInPayload.idToken,
                 expiresIn: signInPayload.expiresIn
             })
-    } catch (error) {
+    } catch (error:any) {
+        console.error("ERROR while loggin in",error.message);
         return res.status(500)
             .json({ message: "Sign in failed"+error })
     }
@@ -96,7 +97,8 @@ export const refreshTokenHandler = async (req: AuthRequest, res: Response) => {
             })
 
 
-    } catch (error) {
+    } catch (error:any) {
+        console.error("ERROR while refreshing token",error.message);
           return res.status(500)
             .json({ message: "refresh token failed"+error })
     }

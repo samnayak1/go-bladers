@@ -45,7 +45,9 @@ export class StreamRepository {
     async getStreamsByUserId(userId: string): Promise<IStream[]> {
         const streams = await Stream.find({
             userId: userId
-        },{streamKey:0}).sort({ createdAt: -1 });
+        },{streamKey:0})
+        .sort({ createdAt: -1 })
+        .populate("userId", "username");
 
 
         return streams;
