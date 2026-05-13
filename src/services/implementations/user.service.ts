@@ -29,6 +29,10 @@ export class UserService {
     return await this.userRepository.getUserByUsername(username);
   }
 
+  async getUserById(userId:string):Promise<IUser |null>{
+    return await this.userRepository.getUserByUserId(userId);
+  }
+
   async getUserByStreamKey(streamKey: string): Promise<IUser | null> {
     return await this.userRepository.getUserByStreamKey(streamKey);
   }

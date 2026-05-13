@@ -20,15 +20,15 @@ export class StreamRepository {
 
 
 
-    async endStream(name: string): Promise<string | null> {
+    async endStream(streamKey: string): Promise<string | null> {
         let streamId: string | null = null;
 
         await User.findOneAndUpdate(
-            { streamKey: name },
+            { streamKey: streamKey },
             { isLive: false }
         );
 
-        const stream = await Stream.findOne({ streamKey: name, isLive: true }).sort({ createdAt: -1 });
+        const stream = await Stream.findOne({ streamKey: streamKey, isLive: true }).sort({ createdAt: -1 });
 
         if (stream) {
             const duration = Math.floor((Date.now() - stream.createdAt.getTime()) / 1000);
@@ -62,6 +62,11 @@ export class StreamRepository {
 
     async getStreamById(streamId: string): Promise<IStream | null> {
         return await Stream.findOne({ _id: streamId});
+    }
+    async getAllStreamsMarkedIsLiveTrue(){
+         return await Stream.find({
+            isLive: true,
+        });
     }
 
     async getLatestStreams(page: number, limit: number): Promise<IStream[]> {

@@ -11,6 +11,7 @@ import authRouter from "./routes/auth.route"
 import streamRouter from "./routes/stream.route"
 import userRouter from "./routes/user.route"
 import { swaggerSpec } from "./configs/swagger";
+import { StreamCleanupService } from "./services/implementations/streamCleanup.service";
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -41,6 +42,10 @@ const fetchSecretsThenStartInitModule = async () => {
   app.use("/auth", authRouter);
   app.use("/stream", streamRouter);
   app.use("/user",userRouter);
+
+//running clean up service
+const cleanupService = new StreamCleanupService();
+cleanupService.start(30000)
 
 
 

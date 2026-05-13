@@ -1,5 +1,5 @@
 import User, { IUser } from "../models/user.model";
-import crypto from "crypto";
+
 
 export class UserRepository {
 
@@ -61,6 +61,12 @@ async getContentCreators(page: number, limit: number) {
 
 async getContentCreatorsCount(): Promise<number> {
   return await User.countDocuments({ streamKey: { $exists: true } });
+}
+
+async getUserByUserId(userId:string):Promise<IUser | null>{
+  const user= await User.findById(userId);
+ 
+  return user;
 }
 
 

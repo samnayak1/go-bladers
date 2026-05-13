@@ -5,6 +5,12 @@ A live streaming platform using HLS.
 
 1. Install Docker and Docker compose
 2. Run the following command:
+3. run the following commands
+
+```bash
+sudo chmod -R 777 ./hls
+sudo chmod -R 755 ./keys
+```
 
 ```bash
 docker compose up --build
@@ -54,6 +60,29 @@ A file format that bundles video, audio, and subtitles together (e.g. `.mp4`, `.
 #### Bitrate
 The amount of data used per second of video.
 
+
+Per Stream (Single Viewer)
+Variant   Video(bitrate)   Audio(bitrate)   Total 
+720p      2500k             128k            ~2.6 Mbps
+480p      1000k             128k             ~1.1 Mbps
+360p      750k              128k             ~0.9 Mbps
+240p      400k              128k              ~0.5 Mbps
+
+1 viewer  = 1.1 Mbps
+100 viewers = 110 Mbps
+1000 viewers = 1.1 Gbps
+
+720p:  2.628 Mbps × 3600s = ~1.18 GB/hr
+480p:  1.128 Mbps × 3600s = ~0.51 GB/hr
+360p:  0.878 Mbps × 3600s = ~0.40 GB/hr
+240p:  0.528 Mbps × 3600s = ~0.24 GB/hr
+240p:  0.264 Mbps × 3600s = ~0.12 GB/hr
+
+Total all variants = ~2.45 GB/hr per stream
+For 10 streamers each streaming 2 hours/day:
+10 × 2 × 2.45 = ~49 GB/day
+49 × 30 = ~1.47 TB/month
+
 ```
 Bitrate = Frame Rate × Duration × Resolution / Codec Efficiency
 ```
@@ -63,6 +92,8 @@ Keyframes are full images. The GOP size is the distance between keyframes. For a
 
 #### .ts Files (MPEG-2 Transport Stream)
 HLS video is broken into small chunks called segments, each containing its own timing information (Program Clock Reference):
+hls_fragment 5 means each segment is 5 seconds. 
+hls_playlist_length 10 means each playlist holds 10 segments.The index.m3u8 file will only ever list the most recent 10 segments:
 
 ```
 segment_001.ts

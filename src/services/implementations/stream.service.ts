@@ -237,11 +237,12 @@ async endStream(streamKey:string){
     //TODO: put in a durable queue
 
     if(streamId){
+     await this.uploadThumbnailOfStream(streamKey,streamId);
      await this.uploadStreamToStorage(streamKey, streamId).catch(err =>
           console.error("S3 upload error:", err)
         );
 
-    await this.uploadThumbnailOfStream(streamKey,streamId);
+  
     }
 
 }
