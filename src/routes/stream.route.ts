@@ -5,6 +5,14 @@ import { endStreamHandler,getAllStreamsOfUserHandler,getLatestStreamsHandler,get
 
 
 
+import { 
+    
+    validateUsernameParam,
+    validateStreamIdParam,
+
+    validatePaginationQuery,
+    validateVariantSegment
+} from "./../validators/stream.validator"
 
 const router = express.Router();
 
@@ -14,24 +22,67 @@ router.post("/stream-key/regenerate", verifyToken, regenerateStreamKeyHandler);
 
 router.post("/publish", publishStreamHandler);
 router.post("/publish-done", endStreamHandler);
-router.post("/play", playStartedHandler);
-router.post("/done", playEndedHandler);
-
-router.get("/replay/:username/:streamId/index.m3u8", getReplayedm3u8Handler);
-router.get("/replay/:username/:streamId/:variant/index.m3u8", getReplayedm3u8VariantHandler);
-router.get("/replay/:username/:streamId/:variant/:segment", getReplayedm3u8SegmentHandler);
+router.post("/play", playStartedHandler);  
+router.post("/done", playEndedHandler);    
 
 
+router.get(
+    "/replay/:username/:streamId/index.m3u8", 
+    validateUsernameParam,  
+    validateStreamIdParam,   
+    getReplayedm3u8Handler
+);
+
+router.get(
+    "/replay/:username/:streamId/:variant/index.m3u8", 
+    validateUsernameParam,
+    validateStreamIdParam,
+
+    getReplayedm3u8VariantHandler
+);
+
+router.get(
+    "/replay/:username/:streamId/:variant/:segment", 
+    validateUsernameParam,
+    validateStreamIdParam,
+    validateVariantSegment,  
+    getReplayedm3u8SegmentHandler
+);
 
 
-router.get("/latest", getLatestStreamsHandler);
+router.get("/latest", validatePaginationQuery, getLatestStreamsHandler);
 
 
-router.get("/:username/index.m3u8", getLive3u8Hanlder);
-router.get("/:username/:variant/index.m3u8", getLivem3u8VariantHandler);
-router.get("/:username/:variant/:segment", getLivem3u8SegmentHandler);
-router.get("/:username/:segment", getLivem3u8SegmentHandler);
-router.get("/:username", getAllStreamsOfUserHandler);
+router.get(
+    "/:username/index.m3u8", 
+    validateUsernameParam,
+    getLive3u8Hanlder
+);
 
+router.get(
+    "/:username/:variant/index.m3u8", 
+    validateUsernameParam,
+    getLivem3u8VariantHandler
+);
+
+router.get(
+    "/:username/:variant/:segment", 
+    validateUsernameParam,
+    getLivem3u8SegmentHandler
+);
+
+
+router.get(
+    "/:username/:segment", 
+    validateUsernameParam,
+    getLivem3u8SegmentHandler
+);
+
+
+router.get(
+    "/:username", 
+    validateUsernameParam,
+    getAllStreamsOfUserHandler
+);
 
 export default router;

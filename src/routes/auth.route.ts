@@ -1,10 +1,23 @@
 import express from "express";
-
+import { 
+    signupHandler, 
+    confirmRegistrationCodeHandler, 
+    loginHandler, 
+    sessionUserDetailsHandler, 
+    refreshTokenHandler, 
+    getUserDetailsHandler,
+    getContentCreatorsHandler 
+} from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/auth.middleware";
-import { confirmRegistrationCodeHandler, getUserDetailsHandler, loginHandler, refreshTokenHandler, sessionUserDetailsHandler, signupHandler } from "../controllers/auth.controller";
+import { 
+    validateSignup, 
+    validateConfirmRegistration, 
+    validateLogin, 
+    validateRefreshToken,
+    validateUsernameParam,
+} from "../validators/auth.validator";
 
 const router = express.Router();
-
 
 /**
  * @swagger
@@ -18,25 +31,65 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
  *             properties:
  *               username:
  *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 30
+ *                 pattern: ^[a-zA-Z0-9]+$
  *               email:
  *                 type: string
+ *                 format: email
  *               password:
  *                 type: string
+ *                 minLength: 8
  *     responses:
  *       201:
  *         description: User registered successfully
  *       400:
- *         description: Bad request
+ *         description: Bad request - Validation failed
  */
-router.post("/register", signupHandler);
+router.post("/register", validateSignup, signupHandler);
 
-
-
-
-router.post("/confirm", confirmRegistrationCodeHandler);
+/**
+ * @swagger
+ * /auth/confirm:
+ *   post:
+ *     summary: Confirm user registration with code
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               code:
+ *                 type: string
+ *                 minLength: 6
+ *                 maxLength: 6
+ *                 pattern: ^\d+$
+ *     responses:
+ *       200:
+ *         description: Account confirmed successfully
+ *       400:
+ *         description: Invalid confirmation code
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: User is already confirmed
+ */
+router.post("/confirm", validateConfirmRegistration, confirmRegistrationCodeHandler);
 
 /**
  * @swagger
@@ -50,9 +103,13 @@ router.post("/confirm", confirmRegistrationCodeHandler);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *               password:
  *                 type: string
  *     responses:
@@ -71,10 +128,12 @@ router.post("/confirm", confirmRegistrationCodeHandler);
  *                   type: string
  *                 expiresIn:
  *                   type: number
+ *       400:
+ *         description: Validation failed
  *       401:
  *         description: Invalid credentials
  */
-router.post("/login", loginHandler);
+router.post("/login", validateLogin, loginHandler);
 
 /**
  * @swagger
@@ -92,7 +151,6 @@ router.post("/login", loginHandler);
  */
 router.get("/me", verifyToken, sessionUserDetailsHandler);
 
-
 /**
  * @swagger
  * /auth/refresh:
@@ -105,6 +163,9 @@ router.get("/me", verifyToken, sessionUserDetailsHandler);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - token
+ *               - userId
  *             properties:
  *               token:
  *                 type: string
@@ -128,11 +189,36 @@ router.get("/me", verifyToken, sessionUserDetailsHandler);
  *                   type: number
  *                 expiresAt:
  *                   type: string
+ *       400:
+ *         description: Validation failed
  *       500:
- *         description: "refresh token failedError: Invalid token: missing sub claim"
+ *         description: Refresh token failed
  */
-router.post("/refresh", refreshTokenHandler);
+router.post("/refresh", validateRefreshToken, refreshTokenHandler);
 
-router.get("/:username", getUserDetailsHandler);
+/**
+ * @swagger
+ * /auth/{username}:
+ *   get:
+ *     summary: Get user details by username
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Username of the user
+ *     responses:
+ *       200:
+ *         description: User details retrieved successfully
+ *       400:
+ *         description: Invalid username format
+ *       404:
+ *         description: User not found
+ */
+router.get("/:username", validateUsernameParam, getUserDetailsHandler);
+
+
 
 export default router;

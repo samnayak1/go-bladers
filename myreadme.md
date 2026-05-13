@@ -7,6 +7,9 @@ http://localhost:8080/stat
 sudo rm -rf hls
 http://<domain>/live/<streamKey>.m3u8
 
+ngrok http 3000
+docker compose run certbot
+
 TODO
 ~~`1. Fix the folder structure`~~
 ~~`2. See why the video isnt playing`~~
@@ -27,3 +30,9 @@ TODO
 18. donations (low)
 19. SSL
 
+
+
+
+
+
+secececececece

@@ -2,7 +2,7 @@ import { Response, Request } from "express"
 import { AuthRequest } from "../middleware/auth.middleware"
 import { StreamService } from "../services/implementations/stream.service";
 import { UserService } from "../services/implementations/user.service";
-import { AuthService } from "../services/implementations/auth.service";
+
 import { createReadStream } from "fs";
 
 const streamService = new StreamService()
@@ -127,15 +127,27 @@ export const getLivem3u8SegmentHandler = async (req: Request, res: Response) => 
 
 export const getLive3u8Hanlder = async (req: Request, res: Response) => {
     try {
-        const { username } = req.params as { username: string };
+        const { username } = req.params as {username:string};
+        
+  
+        
         const content = await streamService.getM3u8Content(username);
+        
+     
+        
+        if (!content) {
+            console.log(`No live content found for user: ${username}`);
+            return res.status(404).json({ 
+                message: "No live stream available for this user" 
+            });
+        }
+        
         return sendM3u8(res, content);
     } catch (error: any) {
         console.error("getLive3u8Handler error:", error.message);
         return res.status(500).json({ message: "Error: " + error.message });
     }
-}
-
+};
 export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
     try {
         const { username, streamId } = req.params as { username: string, streamId: string };
