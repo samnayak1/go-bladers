@@ -2,7 +2,7 @@
 
 
 sudo chmod -R 777 ./hls
-sudo chmod -R 755 ./keys
+sudo chmod -R 777 ./thumbnails
 http://localhost:8080/stat
 sudo rm -rf hls
 http://<domain>/live/<streamKey>.m3u8
@@ -10,12 +10,14 @@ http://<domain>/live/<streamKey>.m3u8
 ngrok http 3000
 docker compose run certbot
 
+
+
 TODO
 ~~`1. Fix the folder structure`~~
 ~~`2. See why the video isnt playing`~~
 ~~`3. Auth the person who can play`~~
 ~~`4. Save recording`~~
-5. schema vaildation
+~~5. schema vaildation~~
 6. rate limiting
 7. swagger docS
 8. cors
@@ -34,5 +36,3 @@ TODO
 
 
 
-
-secececececece
