@@ -11,8 +11,11 @@ RUN npm install --include=dev
 
 COPY --chown=appuser:appgroup . .
 
-
 RUN npx tsc --listEmittedFiles || (echo "TypeScript compilation failed" && exit 1)
+
+
+RUN mkdir -p /opt/data/hls /opt/data/thumbnails /opt/data/keys && \
+    chown -R appuser:appgroup /opt/data
 
 USER appuser
 
