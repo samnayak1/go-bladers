@@ -22,7 +22,7 @@ services:
       - .:/app
       - ./hls:/opt/data/hls
       - ./thumbnails:/opt/data/thumbnails
-    command: npm run dev
+
     env_file:
       - .env
     depends_on:
