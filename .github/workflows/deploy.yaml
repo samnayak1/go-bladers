@@ -43,10 +43,9 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /app/gobladers
-
-            # Pull latest code
+            cd /app/go-bladers
             git pull origin main
+            docker compose down
 
             # Create .env file
             cat > .env << 'EOF'
@@ -62,8 +61,6 @@ jobs:
             S3_BUCKET=${{ secrets.S3_BUCKET }}
             EOF
 
-            # Build and restart containers
-            docker compose up --build -d --remove-orphans
-
-            # Clean up old images
+            docker compose build --no-cache
+            docker compose up -d --remove-orphans
             docker image prune -f
