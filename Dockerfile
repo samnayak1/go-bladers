@@ -11,7 +11,8 @@ RUN npm install --include=dev
 
 COPY --chown=appuser:appgroup . .
 
-RUN npx tsc
+
+RUN npx tsc --listEmittedFiles || (echo "TypeScript compilation failed" && exit 1)
 
 USER appuser
 
