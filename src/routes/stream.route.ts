@@ -16,6 +16,9 @@ import {
 
 const router = express.Router();
 
+router.get("/hello", (_, res) => {
+    res.send("Hello, World!");
+});
 
 router.post("/stream-key/regenerate", verifyToken, regenerateStreamKeyHandler);
 
