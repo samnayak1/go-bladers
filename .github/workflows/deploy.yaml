@@ -60,6 +60,7 @@ jobs:
             COGNITO_CLIENT_ID=${{ secrets.COGNITO_CLIENT_ID }}
             COGNITO_CLIENT_SECRET=${{ secrets.COGNITO_CLIENT_SECRET }}
             S3_BUCKET=${{ secrets.S3_BUCKET }}
+            PORT=${{ secrets.PORT }}
             NODE_ENV=production
             EOF
             
