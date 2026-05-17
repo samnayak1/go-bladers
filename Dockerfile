@@ -1,6 +1,7 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache ffmpeg
+RUN apk add --no-cache ffmpeg && \
+    npm install -g pm2
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
@@ -11,8 +12,10 @@ RUN npm install --include=dev
 
 COPY --chown=appuser:appgroup . .
 
-RUN npx tsc --listEmittedFiles || (echo "TypeScript compilation failed" && exit 1)
+RUN npx tsc
 
+
+RUN test -f dist/server.js || (echo "server.js not found in dist" && exit 1)
 
 RUN mkdir -p /opt/data/hls /opt/data/thumbnails /opt/data/keys && \
     chown -R appuser:appgroup /opt/data
@@ -21,4 +24,4 @@ USER appuser
 
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["pm2-runtime", "dist/server.js"]

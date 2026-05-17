@@ -9,7 +9,6 @@ on:
       - main
 
 jobs:
-  # Job 1: Test
   test:
     runs-on: ubuntu-latest
     steps:
@@ -28,8 +27,6 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-
- # Job 2: Deploy to EC2
   deploy:
     needs: test
     runs-on: ubuntu-latest
@@ -44,10 +41,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /app/go-bladers
+            
+            # logs directory
+            mkdir -p logs
+            
+        
             git pull origin main
-            docker compose down
-
-            # Create .env file
+            
+            # Create/update .env file
             cat > .env << 'EOF'
             AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -59,8 +60,29 @@ jobs:
             COGNITO_CLIENT_ID=${{ secrets.COGNITO_CLIENT_ID }}
             COGNITO_CLIENT_SECRET=${{ secrets.COGNITO_CLIENT_SECRET }}
             S3_BUCKET=${{ secrets.S3_BUCKET }}
+            NODE_ENV=production
             EOF
-
+            
+            # Stop and remove containers
+            docker compose down
+            
+            # Build new image
             docker compose build --no-cache
-            docker compose up -d --remove-orphans
+            
+            # Start containers
+            docker compose up -d
+            
+   
+            sleep 10
+            
+            # Check PM2 status
+            docker exec express-app pm2 list
+            
+            # Check logs
+            docker compose logs app --tail=50
+            
+            # Verify app is running
+            docker compose ps
+            
+            # Clean up old images
             docker image prune -f
