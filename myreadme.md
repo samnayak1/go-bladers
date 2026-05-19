@@ -5,13 +5,29 @@ sudo chmod -R 777 ./hls
 sudo chmod -R 777 ./thumbnails
 http://localhost:8080/stat
 sudo rm -rf hls
+
 http://<domain>/live/<streamKey>.m3u8
 
 ngrok http 3000
 docker compose run certbot
+# Install certbot
+sudo apt install certbot
+
+# Get certificate (standalone mode - temporarily uses port 80)
+sudo certbot certonly --standalone -d go-bladers.click -d www.go-bladers.click
+or 
+sudo certbot certonly --manual --preferred-challenges dns -d go-bladers.click -d www.go-bladers.click
+add as TXT record
+dig TXT _acme-challenge.go-bladers.click +short
+dig TXT _acme-challenge.www.go-bladers.click +short
 
 
-
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw allow 1935
+sudo crontab -e
+0 3 * * * certbot renew --quiet && docker exec rtmp-server nginx -s reload
+sudo crontab -l
 TODO
 ~~`1. Fix the folder structure`~~
 ~~`2. See why the video isnt playing`~~

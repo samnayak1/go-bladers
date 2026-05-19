@@ -41,14 +41,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /app/go-bladers
-            
-            # logs directory
+  
             mkdir -p logs
             
-        
             git pull origin main
             
-            # Create/update .env file
             cat > .env << 'EOF'
             AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -64,26 +61,14 @@ jobs:
             NODE_ENV=production
             EOF
             
-            # Stop and remove containers
-            docker compose down
+            docker compose -f docker-compose.prod.yaml down
+            docker compose -f docker-compose.prod.yaml build --no-cache
+            docker compose -f docker-compose.prod.yaml up -d
             
-            # Build new image
-            docker compose build --no-cache
-            
-            # Start containers
-            docker compose up -d
-            
-   
             sleep 10
             
-            # Check PM2 status
             docker exec express-app pm2 list
+            docker compose -f docker-compose.prod.yaml logs app --tail=50
+            docker compose -f docker-compose.prod.yaml ps
             
-            # Check logs
-            docker compose logs app --tail=50
-            
-            # Verify app is running
-            docker compose ps
-            
-            # Clean up old images
             docker image prune -f
