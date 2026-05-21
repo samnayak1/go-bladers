@@ -1,4 +1,4 @@
-import { CodeDeliveryFailureException, CodeMismatchException, CognitoIdentityProviderClient, ConfirmSignUpCommand, ExpiredCodeException, InitiateAuthCommand, InvalidParameterException, InvalidPasswordException, NotAuthorizedException, SignUpCommand, UsernameExistsException, UserNotFoundException } from "@aws-sdk/client-cognito-identity-provider";
+import { CodeDeliveryFailureException, CodeMismatchException, CognitoIdentityProviderClient, ConfirmSignUpCommand, ExpiredCodeException, InitiateAuthCommand, InvalidParameterException, InvalidPasswordException, NotAuthorizedException, PasswordResetRequiredException, SignUpCommand, TooManyRequestsException, UsernameExistsException, UserNotConfirmedException, UserNotFoundException } from "@aws-sdk/client-cognito-identity-provider";
 import { IAuthService } from "../interfaces/IAuthService";
 import crypto from "crypto";
 import { AuthRepository } from "../../repository/auth.repository";
@@ -78,33 +78,80 @@ async signUp(
     throw new Error("SIGNUP_FAILED");
   }
 }
-    async signIn(email: string, password: string): Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}> {
-            const response = await this.cognitoClient.send(
-              new InitiateAuthCommand({
-                AuthFlow: "USER_PASSWORD_AUTH",
-                ClientId: this.clientId,
-                AuthParameters: {
-                  USERNAME: email,
-                  PASSWORD: password,
-                  SECRET_HASH: this.generateSecretHash(email, this.clientId, this.clientSecret)
-                },
-              })
-            );
-        
-            const tokens = response.AuthenticationResult;
-            if (!tokens) {
-                throw new Error("Authentication failed. Congnto did not retrieve tokens.");
-                }
-            if(!tokens.AccessToken || !tokens.RefreshToken || !tokens.IdToken || !tokens.ExpiresIn) {
-                throw new Error("Authentication failed. Missing tokens in Cognito response.");
-            }
-            return {
-                accessToken: tokens.AccessToken,
-                refreshToken: tokens.RefreshToken,
-                idToken: tokens.IdToken,
-                expiresIn: tokens.ExpiresIn
-            };
+   async signIn(
+  email: string,
+  password: string
+): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  idToken: string;
+  expiresIn: number;
+}> {
+  try {
+    const response = await this.cognitoClient.send(
+      new InitiateAuthCommand({
+        AuthFlow: "USER_PASSWORD_AUTH",
+        ClientId: this.clientId,
+        AuthParameters: {
+          USERNAME: email,
+          PASSWORD: password,
+          SECRET_HASH: this.generateSecretHash(
+            email,
+            this.clientId,
+            this.clientSecret
+          ),
+        },
+      })
+    );
+
+    const tokens = response.AuthenticationResult;
+
+    if (!tokens) {
+      throw new Error("Authentication failed. Cognito did not return tokens.");
     }
+
+    if (
+      !tokens.AccessToken ||
+      !tokens.RefreshToken ||
+      !tokens.IdToken ||
+      !tokens.ExpiresIn
+    ) {
+      throw new Error("Authentication failed. Missing tokens.");
+    }
+
+    return {
+      accessToken: tokens.AccessToken,
+      refreshToken: tokens.RefreshToken,
+      idToken: tokens.IdToken,
+      expiresIn: tokens.ExpiresIn,
+    };
+
+  } catch (error: any) {
+    console.error("Cognito sign in error:", error);
+
+    if (error instanceof NotAuthorizedException) {
+      throw new Error("INVALID_CREDENTIALS");
+    }
+
+    if (error instanceof UserNotConfirmedException) {
+      throw new Error("USER_NOT_CONFIRMED");
+    }
+
+    if (error instanceof UserNotFoundException) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    if (error instanceof PasswordResetRequiredException) {
+      throw new Error("PASSWORD_RESET_REQUIRED");
+    }
+
+    if (error instanceof TooManyRequestsException) {
+      throw new Error("TOO_MANY_REQUESTS");
+    }
+
+    throw new Error("SIGNIN_FAILED");
+  }
+}
 
 
 async confirmUser(email: string, code: string): Promise<boolean> {

@@ -91,28 +91,74 @@ export const confirmRegistrationCodeHandler = async (req: AuthRequest, res: Resp
 
 
 
-export const loginHandler = async (req: Request, res: Response) => {
+export const loginHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const {
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    } = req.body;
 
-    try {
+    const signInPayload = await authService.signIn(
+      email,
+      password
+    );
 
+    return res.status(200).json({
+      accessToken: signInPayload.accessToken,
+      refreshToken: signInPayload.refreshToken,
+      idToken: signInPayload.idToken,
+      expiresIn: signInPayload.expiresIn,
+    });
 
-        const { email, password }: { email: string, password: string } = req.body;
+  } catch (error: any) {
+    console.error(
+      "ERROR while logging in:",
+      error.message
+    );
 
-        const signInPayload = await authService.signIn(email, password);
+    switch (error.message) {
+      case "INVALID_CREDENTIALS":
+        return res.status(401).json({
+          message: "Invalid email or password",
+        });
 
-        return res.status(200)
-            .json({
-                accessToken: signInPayload.accessToken,
-                refreshToken: signInPayload.refreshToken,
-                idToken: signInPayload.idToken,
-                expiresIn: signInPayload.expiresIn
-            })
-    } catch (error:any) {
-        console.error("ERROR while loggin in",error.message);
-        return res.status(500)
-            .json({ message: "Sign in failed"+error })
+      case "USER_NOT_CONFIRMED":
+        return res.status(403).json({
+          message:
+            "Please verify your email before logging in",
+        });
+
+      case "USER_NOT_FOUND":
+        return res.status(404).json({
+          message: "User not found",
+        });
+
+      case "PASSWORD_RESET_REQUIRED":
+        return res.status(403).json({
+          message:
+            "Password reset required before login",
+        });
+
+      case "TOO_MANY_REQUESTS":
+        return res.status(429).json({
+          message:
+            "Too many attempts. Please try again later",
+        });
+
+      default:
+        return res.status(500).json({
+          message:
+            error.message || "Sign in failed",
+        });
     }
-}
+  }
+};
 
 
 export const refreshTokenHandler = async (req: AuthRequest, res: Response) => {
