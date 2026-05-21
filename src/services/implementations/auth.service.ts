@@ -1,4 +1,4 @@
-import { CodeMismatchException, CognitoIdentityProviderClient, ConfirmSignUpCommand, ExpiredCodeException, InitiateAuthCommand, NotAuthorizedException, SignUpCommand, UserNotFoundException } from "@aws-sdk/client-cognito-identity-provider";
+import { CodeDeliveryFailureException, CodeMismatchException, CognitoIdentityProviderClient, ConfirmSignUpCommand, ExpiredCodeException, InitiateAuthCommand, InvalidParameterException, InvalidPasswordException, NotAuthorizedException, SignUpCommand, UsernameExistsException, UserNotFoundException } from "@aws-sdk/client-cognito-identity-provider";
 import { IAuthService } from "../interfaces/IAuthService";
 import crypto from "crypto";
 import { AuthRepository } from "../../repository/auth.repository";
@@ -23,32 +23,61 @@ export class AuthService implements IAuthService {
 
 
 
-    async signUp(email: string, password: string, userName: string): Promise<string> {
-        await this.cognitoClient.send(
-              new SignUpCommand({
-                ClientId: this.clientId,
-                Username: email,
-                Password: password,
-                SecretHash: this.generateSecretHash(
-                    email, this.clientId, this.clientSecret),
-                UserAttributes: [
-                  { Name: "email", Value: email },
-                  { Name: "preferred_username", Value: userName },
-                ],
-              })
-            );
+async signUp(
+  email: string,
+  password: string,
+  userName: string
+): Promise<string> {
+  try {
+    await this.cognitoClient.send(
+      new SignUpCommand({
+        ClientId: this.clientId,
+        Username: email,
+        Password: password,
+        SecretHash: this.generateSecretHash(
+          email,
+          this.clientId,
+          this.clientSecret
+        ),
+        UserAttributes: [
+          { Name: "email", Value: email },
+          { Name: "preferred_username", Value: userName },
+        ],
+      })
+    );
 
-        const streamKey = crypto.randomBytes(16).toString("hex");
-        const userId = await this.authRepository.saveUser({
-          username: userName,
-          email: email,
-          streamKey: streamKey,
-          isVerified: false,
-        });
+    const streamKey = crypto.randomBytes(16).toString("hex");
 
-        return userId;
-        
+    const userId = await this.authRepository.saveUser({
+      username: userName,
+      email,
+      streamKey,
+      isVerified: false,
+    });
+
+    return userId;
+  } catch (error: any) {
+    console.error("Cognito signup error:", error);
+
+    if (error instanceof UsernameExistsException) {
+      throw new Error("EMAIL_ALREADY_EXISTS");
     }
+
+    if (error instanceof InvalidPasswordException) {
+      throw new Error("INVALID_PASSWORD");
+    }
+
+    if (error instanceof InvalidParameterException) {
+      throw new Error(error.message);
+    }
+
+    if (error instanceof CodeDeliveryFailureException) {
+      throw new Error("EMAIL_DELIVERY_FAILED");
+    }
+
+    throw new Error("SIGNUP_FAILED");
+  }
+}
     async signIn(email: string, password: string): Promise<{accessToken:string, refreshToken:string, idToken:string, expiresIn:number}> {
             const response = await this.cognitoClient.send(
               new InitiateAuthCommand({

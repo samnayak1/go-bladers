@@ -12,23 +12,57 @@ import { UserService } from "../services/implementations/user.service";
 
 const authService = new AuthService();
 const userService=new UserService();
-
 export const signupHandler = async (req: AuthRequest, res: Response) => {
-    try {
-        const { email, password, userName }: { email: string, password: string, userName: string } = req.body;
-        const userId = await authService.signUp(email, password, userName);
+  try {
+    const {
+      email,
+      password,
+      userName,
+    }: {
+      email: string;
+      password: string;
+      userName: string;
+    } = req.body;
 
-        return res.status(201).json({
-            message: "User registered. Please check your email to confirm.",
-            userId: userId
+    const userId = await authService.signUp(
+      email,
+      password,
+      userName
+    );
+
+    return res.status(201).json({
+      message: "User registered. Please check your email to confirm.",
+      userId,
+    });
+
+  } catch (error: any) {
+    console.error("Register error:", error);
+
+    switch (error.message) {
+      case "EMAIL_ALREADY_EXISTS":
+        return res.status(409).json({
+          error: "Email already registered",
         });
 
-    } catch (error: any) {
-        console.error("Register error:", error);
-        res.status(500).json({ error: error.message });
+      case "INVALID_PASSWORD":
+        return res.status(400).json({
+          error:
+            "Password does not meet requirements",
+        });
 
+      case "EMAIL_DELIVERY_FAILED":
+        return res.status(500).json({
+          error:
+            "Could not send verification email",
+        });
+
+      default:
+        return res.status(500).json({
+          error: error.message || "Internal server error",
+        });
     }
-}
+  }
+};
 export const confirmRegistrationCodeHandler = async (req: AuthRequest, res: Response) => {
     try {
         const { email, code }: { email: string, code: string } = req.body;

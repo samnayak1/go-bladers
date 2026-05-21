@@ -14,6 +14,7 @@ docker compose run certbot
 sudo apt install certbot
 
 # Get certificate (standalone mode - temporarily uses port 80)
+(Get for server. domain too)
 sudo certbot certonly --standalone -d go-bladers.click -d www.go-bladers.click
 or 
 sudo certbot certonly --manual --preferred-challenges dns -d go-bladers.click -d www.go-bladers.click
