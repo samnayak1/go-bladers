@@ -94,7 +94,7 @@ router.post("/register", validateSignup, signupHandler);
 router.post("/confirm", validateConfirmRegistration, confirmRegistrationCodeHandler);
 
 
-router.post( "/resend-confirmation-code",validateResendConfirmationCode,
+router.post("/resend-confirmation-code",validateResendConfirmationCode,
   resendConfirmationCodeHandler
 );
 
