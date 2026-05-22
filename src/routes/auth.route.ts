@@ -6,7 +6,8 @@ import {
     sessionUserDetailsHandler, 
     refreshTokenHandler, 
     getUserDetailsHandler,
-    getContentCreatorsHandler 
+    getContentCreatorsHandler, 
+    resendConfirmationCodeHandler
 } from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/auth.middleware";
 import { 
@@ -15,6 +16,7 @@ import {
     validateLogin, 
     validateRefreshToken,
     validateUsernameParam,
+    validateResendConfirmationCode,
 } from "../validators/auth.validator";
 
 const router = express.Router();
@@ -90,6 +92,11 @@ router.post("/register", validateSignup, signupHandler);
  *         description: User is already confirmed
  */
 router.post("/confirm", validateConfirmRegistration, confirmRegistrationCodeHandler);
+
+
+router.post( "/resend-confirmation-code",validateResendConfirmationCode,
+  resendConfirmationCodeHandler
+);
 
 /**
  * @swagger
@@ -218,6 +225,9 @@ router.post("/refresh", validateRefreshToken, refreshTokenHandler);
  *         description: User not found
  */
 router.get("/:username", validateUsernameParam, getUserDetailsHandler);
+
+
+
 
 
 

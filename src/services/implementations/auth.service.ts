@@ -1,4 +1,4 @@
-import { CodeDeliveryFailureException, CodeMismatchException, CognitoIdentityProviderClient, ConfirmSignUpCommand, ExpiredCodeException, InitiateAuthCommand, InvalidParameterException, InvalidPasswordException, NotAuthorizedException, PasswordResetRequiredException, SignUpCommand, TooManyRequestsException, UsernameExistsException, UserNotConfirmedException, UserNotFoundException } from "@aws-sdk/client-cognito-identity-provider";
+import { CodeDeliveryFailureException, CodeMismatchException, CognitoIdentityProviderClient, ConfirmSignUpCommand, ExpiredCodeException, InitiateAuthCommand, InvalidParameterException, InvalidPasswordException, LimitExceededException, NotAuthorizedException, PasswordResetRequiredException, ResendConfirmationCodeCommand, SignUpCommand, TooManyRequestsException, UsernameExistsException, UserNotConfirmedException, UserNotFoundException } from "@aws-sdk/client-cognito-identity-provider";
 import { IAuthService } from "../interfaces/IAuthService";
 import crypto from "crypto";
 import { AuthRepository } from "../../repository/auth.repository";
@@ -150,6 +150,48 @@ async signUp(
     }
 
     throw new Error("SIGNIN_FAILED");
+  }
+}
+
+async resendConfirmationCode(
+  email: string
+): Promise<void> {
+  try {
+    await this.cognitoClient.send(
+      new ResendConfirmationCodeCommand({
+        ClientId: this.clientId,
+        Username: email,
+        SecretHash: this.generateSecretHash(
+          email,
+          this.clientId,
+          this.clientSecret
+        ),
+      })
+    );
+
+  } catch (error: any) {
+    console.error(
+      "Resend confirmation code error:",
+      error
+    );
+
+    if (error instanceof UserNotFoundException) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    if (error instanceof TooManyRequestsException) {
+      throw new Error("TOO_MANY_REQUESTS");
+    }
+
+    if (error instanceof LimitExceededException) {
+      throw new Error("LIMIT_EXCEEDED");
+    }
+
+    if (error instanceof InvalidParameterException) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("RESEND_CODE_FAILED");
   }
 }
 

@@ -240,5 +240,59 @@ export const getContentCreatorsHandler = async (req: Request, res: Response) => 
   }
 };
 
+export const resendConfirmationCodeHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { email }: { email: string } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    await authService.resendConfirmationCode(email);
+
+    return res.status(200).json({
+      message:
+        "Confirmation code resent successfully",
+    });
+
+  } catch (error: any) {
+    console.error(
+      "ERROR while resending confirmation code:",
+      error.message
+    );
+
+    switch (error.message) {
+      case "USER_NOT_FOUND":
+        return res.status(404).json({
+          message: "User not found",
+        });
+
+      case "TOO_MANY_REQUESTS":
+        return res.status(429).json({
+          message:
+            "Too many requests. Please try again later",
+        });
+
+      case "LIMIT_EXCEEDED":
+        return res.status(429).json({
+          message:
+            "Attempt limit exceeded. Please wait before retrying",
+        });
+
+      default:
+        return res.status(500).json({
+          message:
+            error.message ||
+            "Failed to resend confirmation code",
+        });
+    }
+  }
+};
+
 
 

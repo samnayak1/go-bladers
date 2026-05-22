@@ -83,6 +83,17 @@ const confirmRegistrationSchema = Joi.object({
         })
 });
 
+const resendConfirmationCodeSchema = Joi.object({
+    email: Joi.string()
+        .email()
+        .required()
+        .messages({
+            'string.email': 'Please provide a valid email address',
+            'any.required': 'Email is required'
+        })
+});
+
+
 const loginSchema = Joi.object({
     email: Joi.string()
         .email()
@@ -151,6 +162,7 @@ const paginationQuerySchema = Joi.object({
 
 export const validateSignup = validate(signupSchema, 'body');
 export const validateConfirmRegistration = validate(confirmRegistrationSchema, 'body');
+export const validateResendConfirmationCode = validate(resendConfirmationCodeSchema, 'body');
 export const validateLogin = validate(loginSchema, 'body');
 export const validateRefreshToken = validate(refreshTokenSchema, 'body');
 export const validateUsernameParam = validate(usernameParamSchema, 'params');
