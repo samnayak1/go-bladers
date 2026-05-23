@@ -4,19 +4,24 @@ import User from "../models/user.model"
 
 
 export class StreamRepository {
-    async createStream(userName: string, streamKey: string, userId: string): Promise<void> {
-        await Stream.create({
-            name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
-            streamKey,
-            userId,
-            isLive: true,
-        });
+async createStream(userName: string, streamKey: string, userId: string): Promise<void> {
+    await Stream.findOneAndUpdate(
+        { streamKey },
+        {
+            $set: {
+                name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
+                userId,
+                isLive: true,
+            }
+        },
+        { upsert: true, new: true }
+    );
 
-        await User.findOneAndUpdate(
-            { streamKey },
-            { isLive: true }
-        );
-    }
+    await User.findOneAndUpdate(
+        { streamKey },
+        { isLive: true }
+    );
+}
 
 
 
