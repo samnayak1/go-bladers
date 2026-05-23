@@ -22,7 +22,10 @@ export class StreamCleanupService {
 
   private async getActiveRtmpStreams(): Promise<string[]> {
     try {
-      const response = await axios.get("http://rtmp:80/stat");
+      const response = await axios.get("http://rtmp:80/stat", {
+            maxRedirects: 0,
+            httpsAgent: new https.Agent({ rejectUnauthorized: false })
+       });
       const parsed = await parseStringPromise(response.data);
 
       const streams = parsed?.rtmp?.server?.[0]?.application
