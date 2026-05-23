@@ -1,4 +1,5 @@
 import axios from "axios";
+import https from "https";
 import { parseStringPromise } from "xml2js";
 import { StreamService } from "./stream.service";
 import { StreamRepository } from "../../repository/stream.repository";
