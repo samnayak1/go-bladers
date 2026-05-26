@@ -61,14 +61,19 @@ jobs:
             NODE_ENV=production
             EOF
             
-            docker compose -f docker-compose.prod.yaml down
+            git pull origin main
+
+          
             docker compose -f docker-compose.prod.yaml build --no-cache
-            docker compose -f docker-compose.prod.yaml up -d
-            
+
+
+            docker compose -f docker-compose.prod.yaml up -d --no-deps app
+            docker compose -f docker-compose.prod.yaml up -d --no-deps rtmp
+
             sleep 10
-            
+
             docker exec express-app pm2 list
             docker compose -f docker-compose.prod.yaml logs app --tail=50
             docker compose -f docker-compose.prod.yaml ps
-            
+
             docker image prune -f

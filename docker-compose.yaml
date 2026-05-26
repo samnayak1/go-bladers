@@ -28,6 +28,8 @@ services:
     depends_on:
       mongo:
         condition: service_started
+      rtmp:
+        condition: service_started
     environment:
       - MONGODB_URI=${MONGODB_URI}
       - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
