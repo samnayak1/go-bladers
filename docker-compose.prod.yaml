@@ -2,6 +2,7 @@ services:
   rtmp:
     image: alfg/nginx-rtmp
     container_name: rtmp-server
+    user: "100:101"
     ports: 
       - "8080:80"  
       - "443:443"       
