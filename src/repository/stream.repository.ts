@@ -14,7 +14,7 @@ async createStream(userName: string, streamKey: string, userId: string): Promise
                 isLive: true,
             }
         },
-        { upsert: true, new: true }
+       { upsert: true, returnDocument: 'after' }
     );
 
     await User.findOneAndUpdate(

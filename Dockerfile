@@ -14,10 +14,10 @@ COPY --chown=appuser:appgroup . .
 
 RUN npx tsc
 
-
 RUN test -f dist/server.js || (echo "server.js not found in dist" && exit 1)
 
 RUN mkdir -p /opt/data/hls /opt/data/thumbnails /opt/data/keys && \
+    chmod -R 777 /opt/data && \
     chown -R appuser:appgroup /opt/data
 
 USER appuser
