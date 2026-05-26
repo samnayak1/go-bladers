@@ -11,7 +11,7 @@ services:
       - ./hls:/opt/data/hls
       - ./thumbnails:/opt/data/thumbnails
       - /etc/letsencrypt:/etc/letsencrypt:ro  
-    entrypoint: ["nginx", "-c", "/etc/nginx/nginx.conf.custom"]
+    entrypoint: ["/bin/sh", "-c", "umask 000 && nginx -c /etc/nginx/nginx.conf.custom"]
     restart: unless-stopped
 
   app:
