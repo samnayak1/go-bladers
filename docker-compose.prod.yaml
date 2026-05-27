@@ -59,5 +59,13 @@ services:
     command: mongod --quiet
     restart: unless-stopped
 
+  permissions:
+    image: alpine
+    volumes:
+      - ./hls:/opt/data/hls
+      - ./thumbnails:/opt/data/thumbnails
+    command: sh -c "while true; do chmod -R 777 /opt/data/hls /opt/data/thumbnails 2>/dev/null; sleep 10; done"
+    restart: unless-stopped
+
 volumes:
   mongo_data:
