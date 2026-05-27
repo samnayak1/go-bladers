@@ -4,17 +4,22 @@ import User from "../models/user.model"
 
 
 export class StreamRepository {
+
+
 async createStream(userName: string, streamKey: string, userId: string): Promise<void> {
     await Stream.findOneAndUpdate(
         { streamKey },
         {
-            $set: {
+            $setOnInsert: {   //only runs when a new document is created, so name and userId are preserved on reconnect.
                 name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
                 userId,
+                streamKey,
+            },
+            $set: {
                 isLive: true,
             }
         },
-       { upsert: true, returnDocument: 'after' }
+        { upsert: true, returnDocument: 'after' }
     );
 
     await User.findOneAndUpdate(
@@ -22,7 +27,6 @@ async createStream(userName: string, streamKey: string, userId: string): Promise
         { isLive: true }
     );
 }
-
 
 
     async endStream(streamKey: string): Promise<string | null> {
