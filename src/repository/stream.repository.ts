@@ -7,20 +7,12 @@ export class StreamRepository {
 
 
 async createStream(userName: string, streamKey: string, userId: string): Promise<void> {
-    await Stream.findOneAndUpdate(
-        { streamKey },
-        {
-            $setOnInsert: {   //only runs when a new document is created, so name and userId are preserved on reconnect.
-                name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
-                userId,
-                streamKey,
-            },
-            $set: {
-                isLive: true,
-            }
-        },
-        { upsert: true, returnDocument: 'after' }
-    );
+    await Stream.create({
+        name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
+        userId,
+        streamKey,
+        isLive: true,
+    });
 
     await User.findOneAndUpdate(
         { streamKey },

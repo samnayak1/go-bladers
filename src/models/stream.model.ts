@@ -19,7 +19,7 @@ export interface IStream extends Document {
 const StreamSchema = new Schema<IStream>({
   name: { type: String, required: true },
 
-  streamKey: { type: String, required: true, unique: true },
+  streamKey: { type: String, required: true },
 
   createdAt: { type: Date, default: Date.now },
 
