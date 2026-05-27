@@ -2,7 +2,7 @@ import { Response, Request } from "express"
 import { AuthRequest } from "../middleware/auth.middleware"
 import { StreamService } from "../services/implementations/stream.service";
 import { UserService } from "../services/implementations/user.service";
-
+import { exec } from "child_process";
 import { createReadStream } from "fs";
 
 const streamService = new StreamService()
@@ -38,6 +38,12 @@ export const publishStreamHandler = async (req: AuthRequest, res: Response) => {
     try {
 
         const { name } = req.body;
+
+    exec("chmod -R 777 /opt/data/hls", (err) => {
+        if (err) console.error("chmod failed:", err);
+    });
+
+      
 
        await streamService.startStream(name);
 
