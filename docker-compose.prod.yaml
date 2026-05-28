@@ -57,7 +57,7 @@ services:
       - MONGO_INITDB_DATABASE=streamdb
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-    command: mongod --quiet
+    command: mongod --quiet --wiredTigerCacheSizeGB 0.25
     restart: unless-stopped
 
   permissions:
