@@ -422,8 +422,7 @@ private async getSegmentStreamHelper(
       let masterContent =
         await readFile(masterPath, "utf8");
 
-      console.log("MASTER BEFORE UPLOAD");
-console.log(masterContent);
+
 
       for (const variant of variants) {
         masterContent =
