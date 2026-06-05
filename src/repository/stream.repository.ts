@@ -6,18 +6,22 @@ import User from "../models/user.model"
 export class StreamRepository {
 
 
-async createStream(userName: string, streamKey: string, userId: string): Promise<void> {
-    await Stream.create({
+async createStream(userName: string, streamKey: string, userId: string): Promise<IStream> {
+    const stream=await Stream.create({
         name: `${userName}'s stream ${Math.random().toString(16).substring(2, 8)}`,
         userId,
         streamKey,
         isLive: true,
     });
 
+  if(stream){
+
     await User.findOneAndUpdate(
         { streamKey },
         { isLive: true }
     );
+}
+    return stream;
 }
 
 

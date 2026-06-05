@@ -1,35 +1,54 @@
 services:
   rtmp:
-    image: alfg/nginx-rtmp
+    build:
+      context: .
+      dockerfile: Dockerfile.rtmp
+      args:
+        NGINX_CONFIG: nginx.prod.conf
+
     container_name: rtmp-server
-    ports: 
-      - "8080:80"  
-      - "443:443"       
-      - "1935:1935" 
+
+    ports:
+      - "8080:80"
+      - "443:443"
+      - "1935:1935"
+
     volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf.custom
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - ./hls:/opt/data/hls
       - ./thumbnails:/opt/data/thumbnails
-      - /etc/letsencrypt:/etc/letsencrypt:ro  
-    entrypoint: ["/bin/sh", "-c", "umask 000 && exec nginx -c /etc/nginx/nginx.conf.custom"]
+      - ./nginx-tmp:/tmp/nginx
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+
+    environment:
+      - NGINX_PID_PATH=/tmp/nginx/nginx.pid
+      - NGINX_ERROR_LOG=/tmp/nginx/error.log
+   
+
     restart: unless-stopped
 
   app:
     build: .
+
     container_name: express-app
+
     ports:
       - "3000:3000"
+
     volumes:
       - ./hls:/opt/data/hls
       - ./thumbnails:/opt/data/thumbnails
-      - ./logs:/opt/data/logs  
+      - ./logs:/opt/data/logs
+
     env_file:
       - .env
+
     depends_on:
       mongo:
         condition: service_started
       rtmp:
         condition: service_started
+
     environment:
       - MONGODB_URI=${MONGODB_URI}
       - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
@@ -37,6 +56,7 @@ services:
       - COGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}
       - AWS_REGION=${AWS_REGION}
       - NODE_ENV=production
+
     restart: unless-stopped
 
     healthcheck:
@@ -48,24 +68,22 @@ services:
   mongo:
     image: mongo:7
     container_name: mongo
+
     mem_limit: 512m
+
     ports:
       - "27017:27017"
+
     volumes:
       - mongo_data:/data/db
+
     environment:
       - MONGO_INITDB_DATABASE=streamdb
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-    command: mongod --quiet --wiredTigerCacheSizeGB 0.25
-    restart: unless-stopped
 
-  permissions:
-    image: alpine
-    volumes:
-      - ./hls:/opt/data/hls
-      - ./thumbnails:/opt/data/thumbnails
-    command: sh -c "while true; do chmod -R 777 /opt/data/hls /opt/data/thumbnails 2>/dev/null; sleep 10; done"
+    command: mongod --quiet --wiredTigerCacheSizeGB 0.25
+
     restart: unless-stopped
 
 volumes:

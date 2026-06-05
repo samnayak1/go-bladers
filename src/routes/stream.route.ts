@@ -1,7 +1,17 @@
 import express from "express";
 
 import { verifyToken } from "../middleware/auth.middleware";
-import { endStreamHandler,getAllStreamsOfUserHandler,getLatestStreamsHandler,getLive3u8Hanlder, getLivem3u8SegmentHandler, getLivem3u8VariantHandler, getReplayedm3u8Handler, getReplayedm3u8SegmentHandler, getReplayedm3u8VariantHandler, playEndedHandler, playStartedHandler, publishStreamHandler, regenerateStreamKeyHandler } from "../controllers/stream.controller";
+import { endStreamHandler,
+    getAllStreamsOfUserHandler,
+    getLatestStreamsHandler,
+    getLive3u8Hanlder, 
+    getLivem3u8SegmentHandler,
+     getLivem3u8VariantHandler,
+      getReplayedm3u8Handler,
+       getReplayedm3u8SegmentHandler,
+        getReplayedm3u8VariantHandler, 
+        playEndedHandler, playStartedHandler, 
+        publishStreamHandler, regenerateStreamKeyHandler } from "../controllers/stream.controller";
 
 
 
@@ -17,6 +27,7 @@ import {
 const router = express.Router();
 
 router.get("/hello", (_, res) => {
+    console.log("Hello world")
     res.send("Hello, World!");
 });
 

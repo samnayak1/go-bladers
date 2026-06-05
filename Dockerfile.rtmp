@@ -1,0 +1,6 @@
+FROM alfg/nginx-rtmp
+
+ARG NGINX_CONFIG=nginx.conf
+
+COPY ${NGINX_CONFIG} /etc/nginx/nginx.conf
+COPY ${NGINX_CONFIG} /etc/nginx/nginx.conf.template

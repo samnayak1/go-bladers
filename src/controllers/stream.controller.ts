@@ -36,14 +36,17 @@ export const regenerateStreamKeyHandler = async (req: AuthRequest, res: Response
 export const publishStreamHandler = async (req: AuthRequest, res: Response) => {
 
     try {
+        console.log("Publish request body:", req.body);
+        console.log("Publish request query:", req.query);
 
         const { name } = req.body;
 
 
+        console.log("Publishing stream at", new Date().toISOString());
 
-      
 
-       await streamService.startStream(name);
+
+        await streamService.startStream(name);
 
 
         //TODO: return something meaningful
@@ -131,21 +134,21 @@ export const getLivem3u8SegmentHandler = async (req: Request, res: Response) => 
 
 export const getLive3u8Hanlder = async (req: Request, res: Response) => {
     try {
-        const { username } = req.params as {username:string};
-        
-  
-        
+        const { username } = req.params as { username: string };
+
+
+
         const content = await streamService.getM3u8Content(username);
-        
-     
-        
+
+
+
         if (!content) {
             console.log(`No live content found for user: ${username}`);
-            return res.status(404).json({ 
-                message: "No live stream available for this user" 
+            return res.status(404).json({
+                message: "No live stream available for this user"
             });
         }
-        
+
         return sendM3u8(res, content);
     } catch (error: any) {
         console.error("getLive3u8Handler error:", error.message);
@@ -163,10 +166,11 @@ export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
         //TODO:fix here
         const content = await streamService.getS3Content(
-            `${stream.recordingKey}/${stream.streamKey}.m3u8`,
+            `${stream.recordingKey}/master.m3u8`,
             stream.streamKey,
             streamId
         );
+        console.log("content: "+content);
         if (!content) return res.status(404).json({ message: "Recording not found" });
 
         return sendM3u8(res, content);
@@ -184,6 +188,8 @@ export const getReplayedm3u8VariantHandler = async (req: Request, res: Response)
             variant: string
         };
 
+
+
         const user = await userService.getUserByUsername(username);
         if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -191,6 +197,13 @@ export const getReplayedm3u8VariantHandler = async (req: Request, res: Response)
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
 
         const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
+        console.log({
+            streamId,
+            variant,
+            streamKey: stream.streamKey,
+            actualVariant,
+            key: `${stream.recordingKey}/${actualVariant}/index.m3u8`
+        });
         const content = await streamService.getS3Content(
             `${stream.recordingKey}/${actualVariant}/index.m3u8`,
             stream.streamKey,
@@ -219,7 +232,7 @@ export const getReplayedm3u8SegmentHandler = async (req: Request, res: Response)
 
         const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
-       //the stream is stored with prefix of streamKey and hence replace the incoming streamId request with streamKey
+        //the stream is stored with prefix of streamKey and hence replace the incoming streamId request with streamKey
         const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
         const key = `${stream.recordingKey}/${actualVariant}/${segment}`;
 

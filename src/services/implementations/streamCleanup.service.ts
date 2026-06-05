@@ -2,31 +2,27 @@ import axios from "axios";
 import https from "https";
 import { parseStringPromise } from "xml2js";
 import { StreamService } from "./stream.service";
-import { StreamRepository } from "../../repository/stream.repository";
-import { IStream } from "../../models/stream.model";
-import { UserRepository } from "../../repository/user.repository";
+
+
 
 
 export class StreamCleanupService {
   private interval: NodeJS.Timeout | null = null;
   private streamService: StreamService;
-  private streamRepository: StreamRepository;
-  private userRepository: UserRepository;
 
-
+  private trackedStreams: Set<string> = new Set(); // track active streams
 
   constructor() {
     this.streamService = new StreamService();
-    this.streamRepository=new StreamRepository();
-    this.userRepository=new UserRepository();
+  
   }
 
   private async getActiveRtmpStreams(): Promise<string[]> {
     try {
       const response = await axios.get("http://rtmp:80/stat", {
-            maxRedirects: 0,
-            httpsAgent: new https.Agent({ rejectUnauthorized: false })
-       });
+        maxRedirects: 0,
+        httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      });
       const parsed = await parseStringPromise(response.data);
 
       const streams = parsed?.rtmp?.server?.[0]?.application
@@ -42,29 +38,21 @@ export class StreamCleanupService {
     }
   }
 
-  private async markStreamAsEnded(stream: IStream): Promise<void> {
+  private async handleStreamStarted(streamKey: string): Promise<void> {
     try {
-
-
-      await this.streamRepository.endStream(stream.streamKey);
+      console.log(`Stream started: ${streamKey}`);
+      await this.streamService.startStream(streamKey);
     } catch (err: any) {
-      console.error(`Failed to mark stream ${stream._id} as ended:`, err.message);
+      console.error(`Failed to start stream ${streamKey}:`, err.message);
     }
   }
 
-  private async markUserAsOffline(streamKey: string): Promise<void> {
+  private async handleStreamEnded(streamKey: string): Promise<void> {
     try {
-      await this.userRepository.setUserLiveStatus(streamKey,false);
+      
+      await this.streamService.endStream(streamKey);
     } catch (err: any) {
-      console.error(`Failed to mark user offline for streamKey ${streamKey}:`, err.message);
-    }
-  }
-
-  private async uploadStreamRecording(streamKey: string, streamId: string): Promise<void> {
-    try {
-      await this.streamService.uploadStreamToStorage(streamKey, streamId);
-    } catch (err: any) {
-      console.error(`Failed to upload stream ${streamId} to S3:`, err.message);
+      console.error(`Failed to end stream ${streamKey}:`, err.message);
     }
   }
 
@@ -73,27 +61,20 @@ export class StreamCleanupService {
       const activeRtmpStreams = await this.getActiveRtmpStreams();
       console.log("Active RTMP streams:", activeRtmpStreams);
 
-      const liveStreams = await this.streamRepository.getAllStreamsMarkedIsLiveTrue();
+      // detect new streams
+      for (const streamKey of activeRtmpStreams) {
+        if (!this.trackedStreams.has(streamKey)) {
+          this.trackedStreams.add(streamKey);
+          await this.handleStreamStarted(streamKey);
+        }
+      }
 
-      for (const stream of liveStreams) {
-        try {
-          if (!activeRtmpStreams.includes(stream.streamKey)) {
-            console.log(`Stream ${stream._id} is no longer active, cleaning up...`);
-
-            await Promise.all([
-              this.markStreamAsEnded(stream),
-              this.markUserAsOffline(stream.streamKey),
-            ]);
-
-            await this.uploadStreamRecording(
-              stream.streamKey,
-              stream._id.toString()
-            );
-
-            console.log(`Stream ${stream._id} cleanup complete`);
-          }
-        } catch (err: any) {
-          console.error(`Failed to cleanup stream ${stream._id}:`, err.message);
+      // detect ended streams
+      for (const streamKey of this.trackedStreams) {
+        if (!activeRtmpStreams.includes(streamKey)) {
+   
+          this.trackedStreams.delete(streamKey);
+          await this.handleStreamEnded(streamKey);
         }
       }
     } catch (err: any) {
@@ -102,29 +83,21 @@ export class StreamCleanupService {
   }
 
   start(intervalMs: number = 30000): void {
-    try {
-      console.log(`Starting stream cleanup every ${intervalMs / 1000}s`);
-      this.interval = setInterval(async () => {
-        try {
-          await this.cleanupDeadStreams();
-        } catch (err: any) {
-          console.error("Cleanup interval error:", err.message);
-        }
-      }, intervalMs);
-    } catch (err: any) {
-      console.error("Failed to start cleanup service:", err.message);
-    }
+    console.log(`Starting stream cleanup every ${intervalMs / 1000}s`);
+    this.interval = setInterval(async () => {
+      try {
+        await this.cleanupDeadStreams();
+      } catch (err: any) {
+        console.error("Cleanup interval error:", err.message);
+      }
+    }, intervalMs);
   }
 
   stop(): void {
-    try {
-      if (this.interval) {
-        clearInterval(this.interval);
-        this.interval = null;
-        console.log("Stream cleanup service stopped");
-      }
-    } catch (err: any) {
-      console.error("Failed to stop cleanup service:", err.message);
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+      console.log("Stream cleanup service stopped");
     }
   }
 }

@@ -45,7 +45,7 @@ const fetchSecretsThenStartInitModule = async () => {
 
 //running clean up service
 const cleanupService = new StreamCleanupService();
-cleanupService.start(30000)
+cleanupService.start(5000) //5 seconds
 
 
 

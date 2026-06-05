@@ -3,7 +3,8 @@
 
 sudo chmod -R 777 ./hls
 sudo chmod -R 777 ./thumbnails
-
+sudo chown -R 1000:1000 hls thumbnails
+chmod -R 775 hls thumbnails
 sudo chmod -R a+rwx /app/go-bladers/hls /app/go-bladers/thumbnails
 sudo find /app/go-bladers/hls -type d -exec chmod 777 {} \;
 sudo find /app/go-bladers/thumbnails -type d -exec chmod 777 {} \;
