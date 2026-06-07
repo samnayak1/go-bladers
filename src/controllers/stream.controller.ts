@@ -154,6 +154,8 @@ export const getLive3u8Hanlder = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Error: " + error.message });
     }
 };
+
+
 export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
     try {
         const { username, streamId } = req.params as { username: string, streamId: string };

@@ -82,7 +82,7 @@ export class StreamCleanupService {
     }
   }
 
-  start(intervalMs: number = 30000): void {
+  start(intervalMs: number = 5000): void {
     console.log(`Starting stream cleanup every ${intervalMs / 1000}s`);
     this.interval = setInterval(async () => {
       try {
