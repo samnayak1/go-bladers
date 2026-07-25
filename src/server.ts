@@ -25,7 +25,12 @@ app.use(cors({
 
 const fetchSecretsThenStartInitModule = async () => {
   console.log("Starting bootstrap...");
+
+
   const secrets = await getSecrets();
+
+
+
 
  console.log("Secrets fetched");
   const db = new Database(new MongoDBStrategy(secrets.MONGODB_URI));
@@ -45,7 +50,8 @@ const fetchSecretsThenStartInitModule = async () => {
 
 //running clean up service
 const cleanupService = new StreamCleanupService();
-cleanupService.start(5000) //5 seconds
+await cleanupService.initialize(); 
+cleanupService.start();
 
 
 

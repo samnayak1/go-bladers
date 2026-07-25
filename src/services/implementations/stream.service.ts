@@ -23,6 +23,7 @@ import {
 } from "../../types/dto/stream.dto";
 import { getVariantNames } from "../../types/variants.enums";
 
+
 const execAsync = promisify(exec);
 
 export class StreamService {
@@ -35,12 +36,14 @@ export class StreamService {
 
   private watchers: Map<string, NodeJS.Timeout>;
   private uploadedSegments: Map<string, Set<string>>;
-
+  
   constructor() {
+    this.bucketName = process.env.S3_BUCKET || "";
+
     this.streamRepository = new StreamRepository();
     this.userRepository = new UserRepository();
 
-    this.bucketName = process.env.S3_BUCKET!;
+  
     this.HLS_PATH = "/opt/data/hls";
     this.THUMBNAIL_PATH = "/opt/data/thumbnails";
 
@@ -91,150 +94,121 @@ export class StreamService {
       streamId
     );
   }
-public async getM3u8Content(
-  userName: string
-): Promise<string | null> {
-  const user =
-    await this.userRepository.getUserByUsername(userName);
+  public async getMasterPlaylist(
+    userName: string
+  ): Promise<string | null> {
+    const user =
+      await this.userRepository.getUserByUsername(userName);
 
-  if (!user) {
-    throw new Error("User not found");
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return await this.readMasterPlaylist(
+      user.streamKey,
+      user.username
+    );
   }
 
-  return await this.getM3u8ContentHelper(
-    user.streamKey,
-    user.username
-  );
-}
+  private async readMasterPlaylist(
+    streamKey: string,
+    replaceWith: string
+  ): Promise<string | null> {
+    const m3u8Path = path.join(
+      this.HLS_PATH,
+      `${streamKey}.m3u8`
+    );
 
-private async getM3u8ContentHelper(
-  streamKey: string,
-  replaceWith: string
-): Promise<string | null> {
-  const m3u8Path = path.join(
-    this.HLS_PATH,
-    `${streamKey}.m3u8`
-  );
+    for (let i = 0; i < 20; i++) {
+      if (existsSync(m3u8Path)) {
+        const content = await readFile(
+          m3u8Path,
+          "utf-8"
+        );
+        //replaced streamKey with usernam
+        // The g means global, replace all instances of streamKey with username 
+        return content.replace(new RegExp(this.escapeRegExp(streamKey), "g"), replaceWith);
+      }
 
-  for (let i = 0; i < 20; i++) {
-    if (existsSync(m3u8Path)) {
-      const content = await readFile(
-        m3u8Path,
-        "utf-8"
-      );
- //replaced streamKey with usernam
- // The g means global, replace all instances of streamKey with username 
-      return content.replace(
-        new RegExp(streamKey, "g"),
-        replaceWith
+      await new Promise(resolve =>
+        setTimeout(resolve, 250)
       );
     }
 
-    await new Promise(resolve =>
-      setTimeout(resolve, 250)
-    );
+    return null;
   }
 
-  return null;
-}
 
+  public async getVariantPlaylist(variant: string, username: string): Promise<string | null> {
+    const user = await this.userRepository.getUserByUsername(username);
+    if (!user) throw new Error("User not found");
 
-public async getVariantContent(
-  variant: string,
-  username: string
-): Promise<string | null> {
-  const user =
-    await this.userRepository.getUserByUsername(
+    const actualVariant = variant.replace(
+      new RegExp(this.escapeRegExp(username), "g"),
+      user.streamKey
+    );
+
+    const variantPath = path.join(this.HLS_PATH, actualVariant, "index.m3u8");
+
+    if (!existsSync(variantPath)) {
+      return null; // Return immediately — player will retry
+    }
+
+    const content = await readFile(variantPath, "utf-8");
+    return content.replace(
+      new RegExp(this.escapeRegExp(user.streamKey), "g"),
       username
     );
-
-  if (!user) {
-    throw new Error("User not found");
   }
 
-  const actualVariant = variant.replace(
-    new RegExp(username, "g"),
-    user.streamKey
-  );
-
-  const variantPath = path.join(
-    this.HLS_PATH,
-    actualVariant,
-    "index.m3u8"
-  );
-
-  for (let i = 0; i < 20; i++) {
-    if (existsSync(variantPath)) {
-      const content = await readFile(
-        variantPath,
-        "utf-8"
-      );
-
-      return content.replace(
-        new RegExp(user.streamKey, "g"),
+  public async getSegmentPath(
+    variant: string,
+    segment: string,
+    username: string
+  ): Promise<string | null> {
+    const user =
+      await this.userRepository.getUserByUsername(
         username
       );
+
+    if (!user) {
+      throw new Error("User not found");
     }
 
-    await new Promise(resolve =>
-      setTimeout(resolve, 500)
+    return await this.resolveSegmentPath(
+      variant,
+      segment,
+      username,
+      user.streamKey
     );
   }
 
-  return null;
-}
+  private async resolveSegmentPath(
+    variant: string,
+    segment: string,
+    username: string,
+    streamKey: string
+  ): Promise<string | null> {
+    const actualVariant = variant.replace(new RegExp(this.escapeRegExp(username), "g"), streamKey);
 
-public async getSegmentStream(
-  variant: string,
-  segment: string,
-  username: string
-): Promise<string | null> {
-  const user =
-    await this.userRepository.getUserByUsername(
-      username
+    const segmentPath = path.join(
+      this.HLS_PATH,
+      actualVariant,
+      segment
     );
 
-  if (!user) {
-    throw new Error("User not found");
-  }
+    for (let i = 0; i < 20; i++) {
+      if (existsSync(segmentPath)) {
+        return segmentPath;
+      }
 
-  return await this.getSegmentStreamHelper(
-    variant,
-    segment,
-    username,
-    user.streamKey
-  );
-}
-
-private async getSegmentStreamHelper(
-  variant: string,
-  segment: string,
-  username: string,
-  streamKey: string
-): Promise<string | null> {
-  const actualVariant = variant.replace(
-    new RegExp(username, "g"),
-    streamKey
-  );
-
-  const segmentPath = path.join(
-    this.HLS_PATH,
-    actualVariant,
-    segment
-  );
-
-  for (let i = 0; i < 20; i++) {
-    if (existsSync(segmentPath)) {
-      return segmentPath;
+      await new Promise(resolve =>
+        setTimeout(resolve, 250)
+      );
     }
 
-    await new Promise(resolve =>
-      setTimeout(resolve, 250)
-    );
+    return null;
   }
-
-  return null;
-}
 
   async startLiveUpload(
     streamKey: string,
@@ -346,64 +320,62 @@ private async getSegmentStreamHelper(
     );
   }
 
+  private async isValidSegment(filePath: string): Promise<boolean> {
+    try {
+      const stats = statSync(filePath);
+      if (stats.size < 1024) return false; // Too small
+
+      // Optional: ffprobe check (slower but thorough)
+      // await execAsync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${filePath}"`);
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async uploadAllSegments(
     streamKey: string,
     streamId: string,
     uploadedFiles: Set<string>
   ): Promise<void> {
-    const variants =
-      getVariantNames(streamKey);
+    const variants = getVariantNames(streamKey);
 
     for (const variant of variants) {
-      const variantPath = path.join(
-        this.HLS_PATH,
-        variant
-      );
+      const variantPath = path.join(this.HLS_PATH, variant);
+      if (!existsSync(variantPath)) continue;
 
-      if (!existsSync(variantPath)) {
-        continue;
-      }
-
-      const files = readdirSync(
-        variantPath
-      ).filter(f => f.endsWith(".ts"));
+      const files = readdirSync(variantPath)
+        .filter(f => f.endsWith(".ts"))
+        .sort(); // Ensure sequential order
 
       for (const file of files) {
-        const uniqueId =
-          `${variant}/${file}`;
+        const uniqueId = `${variant}/${file}`;
+        if (uploadedFiles.has(uniqueId)) continue;
 
-        if (uploadedFiles.has(uniqueId)) {
+        const filePath = path.join(variantPath, file);
+
+        // Validate before upload
+        if (!(await this.isValidSegment(filePath))) {
+          console.warn(`Skipping invalid segment: ${uniqueId}`);
           continue;
         }
 
-        const filePath = path.join(
-          variantPath,
-          file
-        );
-
         try {
-          await this.waitForFileStable(
-            filePath
-          );
-
+          await this.waitForFileStable(filePath);
           await this.uploadFileToS3(
             filePath,
             `recordings/${streamId}/${variant}/${file}`,
             this.bucketName,
             "video/mp2t"
           );
-
           uploadedFiles.add(uniqueId);
         } catch (err) {
-          console.error(
-            `Failed upload ${uniqueId}`,
-            err
-          );
+          console.error(`Failed upload ${uniqueId}:`, err);
         }
       }
     }
   }
-
 
   private async uploadPlaylists(
     streamKey: string,
@@ -481,7 +453,7 @@ private async getSegmentStreamHelper(
     );
   }
 
- 
+
 
   private async uploadThumbnailOfStream(
     streamKey: string,
@@ -525,11 +497,11 @@ private async getSegmentStreamHelper(
           this.THUMBNAIL_PATH,
           0o777
         );
-      } catch {}
+      } catch { }
 
       await execAsync(
-    `ffmpeg -y -analyzeduration 100M -probesize 100M -i "${m3u8Path}" -ss 00:00:02 -map 0:v:0 -vframes 1 -q:v 2 -vf scale=1280:720 "${outputPath}"`
-);
+        `ffmpeg -y -analyzeduration 100M -probesize 100M -i "${m3u8Path}" -ss 00:00:02 -map 0:v:0 -vframes 1 -q:v 2 -vf scale=1280:720 "${outputPath}"`
+      );
 
       const s3Key =
         `thumbnails/${streamId}.jpg`;
@@ -631,26 +603,19 @@ private async getSegmentStreamHelper(
     );
   }
 
-  async getS3Content(
-    key: string,
-    streamKey: string,
-    replaceWith: string
-  ): Promise<string | null> {
-    const response =
-      await this.getS3Object(key);
+  /*If streamKey contains regex special characters (like $, ., +, etc.), new RegExp(streamKey, "g") will throw or behave unexpectedly */
+  private escapeRegExp(string: string): string {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
-    const content =
-      (await response.Body?.transformToString()) ??
-      "";
 
-    if (!content) {
-      return null;
-    }
 
-    return content.replace(
-      new RegExp(streamKey, "g"),
-      replaceWith
-    );
+  async getS3Content(key: string, streamKey: string, replaceWith: string): Promise<string | null> {
+    const response = await this.getS3Object(key);
+    const content = (await response.Body?.transformToString()) ?? "";
+    if (!content) return null;
+
+    return content.replace(new RegExp(this.escapeRegExp(streamKey), "g"), replaceWith);
   }
 
 
@@ -744,8 +709,8 @@ private async getSegmentStreamHelper(
     streamObj.thumbnailUrl =
       stream.thumbnailKey
         ? await this.getSignedUrl(
-            stream.thumbnailKey
-          )
+          stream.thumbnailKey
+        )
         : null;
 
     return streamObj;

@@ -4,12 +4,13 @@ import { verifyToken } from "../middleware/auth.middleware";
 import { endStreamHandler,
     getAllStreamsOfUserHandler,
     getLatestStreamsHandler,
-    getLive3u8Hanlder, 
-    getLivem3u8SegmentHandler,
-     getLivem3u8VariantHandler,
-      getReplayedm3u8Handler,
-       getReplayedm3u8SegmentHandler,
-        getReplayedm3u8VariantHandler, 
+    getLiveMasterPlaylist, 
+    getLiveSegment,
+     getLiveVariantPlaylist,
+      
+       getReplaySegment,
+        getReplayVariantPlaylist, 
+        getReplayMasterPlaylist, 
         playEndedHandler, playStartedHandler, 
         publishStreamHandler, regenerateStreamKeyHandler } from "../controllers/stream.controller";
 
@@ -44,7 +45,7 @@ router.get(
     "/replay/:username/:streamId/index.m3u8", 
     validateUsernameParam,  
     validateStreamIdParam,   
-    getReplayedm3u8Handler
+    getReplayMasterPlaylist
 );
 
 router.get(
@@ -52,7 +53,7 @@ router.get(
     validateUsernameParam,
     validateStreamIdParam,
 
-    getReplayedm3u8VariantHandler
+    getReplayVariantPlaylist
 );
 
 router.get(
@@ -60,7 +61,7 @@ router.get(
     validateUsernameParam,
     validateStreamIdParam,
     validateVariantSegment,  
-    getReplayedm3u8SegmentHandler
+    getReplaySegment
 );
 
 
@@ -70,27 +71,23 @@ router.get("/latest", validatePaginationQuery, getLatestStreamsHandler);
 router.get(
     "/:username/index.m3u8", 
     validateUsernameParam,
-    getLive3u8Hanlder
+    getLiveMasterPlaylist
 );
 
 router.get(
     "/:username/:variant/index.m3u8", 
     validateUsernameParam,
-    getLivem3u8VariantHandler
+    getLiveVariantPlaylist
 );
 
 router.get(
     "/:username/:variant/:segment", 
     validateUsernameParam,
-    getLivem3u8SegmentHandler
+    getLiveSegment
 );
 
 
-router.get(
-    "/:username/:segment", 
-    validateUsernameParam,
-    getLivem3u8SegmentHandler
-);
+
 
 
 router.get(

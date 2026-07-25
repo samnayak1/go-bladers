@@ -35,3 +35,17 @@ export const getSecrets = async (): Promise<AppSecrets> => {
     S3_BUCKET: process.env.S3_BUCKET!,
   };
 };
+
+// let secrets: AppSecrets;
+
+// export const setSecrets = (value: AppSecrets) => {
+//   secrets = value;
+// };
+
+// export const getConfig = () => {
+//   if (!secrets) {
+//     throw new Error("Secrets have not been initialized.");
+//   }
+
+//   return secrets;
+// };

@@ -5,15 +5,24 @@ import { UserService } from "../services/implementations/user.service";
 
 import { createReadStream } from "fs";
 
-const streamService = new StreamService()
+
+
+
+const streamService = new StreamService();
+
+
 const userService = new UserService();
+
+const escapeRegExp = (string: string): string => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
 
 export const regenerateStreamKeyHandler = async (req: AuthRequest, res: Response) => {
 
     try {
 
         if (!req.user) {
-            res.status(403)
+            return res.status(403)
                 .json("user not found");
         }
         const email = req.user?.email;
@@ -36,7 +45,7 @@ export const regenerateStreamKeyHandler = async (req: AuthRequest, res: Response
 export const publishStreamHandler = async (req: AuthRequest, res: Response) => {
 
     try {
-      
+
 
         const { name } = req.body;
 
@@ -86,7 +95,7 @@ export const endStreamHandler = async (req: AuthRequest, res: Response) => {
 
 }
 
-export const playStartedHandler = async (req: AuthRequest, res: Response) => {
+export const playStartedHandler = async (_req: AuthRequest, res: Response) => {
     try {
         return res.status(200).json({ message: "play started" });
     } catch (error: any) {
@@ -95,7 +104,7 @@ export const playStartedHandler = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const playEndedHandler = async (req: AuthRequest, res: Response) => {
+export const playEndedHandler = async (_req: AuthRequest, res: Response) => {
     try {
         return res.status(200).json({ message: "play ended" });
     } catch (error: any) {
@@ -104,10 +113,10 @@ export const playEndedHandler = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const getLivem3u8VariantHandler = async (req: Request, res: Response) => {
+export const getLiveVariantPlaylist = async (req: Request, res: Response) => {
     try {
         const { username, variant } = req.params as { username: string, variant: string };
-        const content = await streamService.getVariantContent(variant, username);
+        const content = await streamService.getVariantPlaylist(variant, username);
         return sendM3u8(res, content);
     } catch (error: any) {
         console.error("getLivem3u8VariantHandler error:", error.message);
@@ -115,10 +124,10 @@ export const getLivem3u8VariantHandler = async (req: Request, res: Response) => 
     }
 }
 
-export const getLivem3u8SegmentHandler = async (req: Request, res: Response) => {
+export const getLiveSegment = async (req: Request, res: Response) => {
     try {
         const { username, variant, segment } = req.params as { username: string, variant: string, segment: string };
-        const segmentPath = await streamService.getSegmentStream(variant, segment, username);
+        const segmentPath = await streamService.getSegmentPath(variant, segment, username);
         if (!segmentPath) return res.status(404).json({ message: "segment not found" });
 
         res.setHeader("Content-Type", "video/mp2t");
@@ -131,13 +140,13 @@ export const getLivem3u8SegmentHandler = async (req: Request, res: Response) => 
     }
 }
 
-export const getLive3u8Hanlder = async (req: Request, res: Response) => {
+export const getLiveMasterPlaylist = async (req: Request, res: Response) => {
     try {
         const { username } = req.params as { username: string };
 
 
 
-        const content = await streamService.getM3u8Content(username);
+        const content = await streamService.getMasterPlaylist(username);
 
 
 
@@ -156,7 +165,7 @@ export const getLive3u8Hanlder = async (req: Request, res: Response) => {
 };
 
 
-export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
+export const getReplayMasterPlaylist = async (req: Request, res: Response) => {
     try {
         const { username, streamId } = req.params as { username: string, streamId: string };
 
@@ -165,7 +174,7 @@ export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
 
         const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
-        //TODO:fix here
+  
         const content = await streamService.getS3Content(
             `${stream.recordingKey}/master.m3u8`,
             stream.streamKey,
@@ -181,7 +190,7 @@ export const getReplayedm3u8Handler = async (req: Request, res: Response) => {
     }
 }
 
-export const getReplayedm3u8VariantHandler = async (req: Request, res: Response) => {
+export const getReplayVariantPlaylist = async (req: Request, res: Response) => {
     try {
         const { username, streamId, variant } = req.params as {
             username: string,
@@ -197,8 +206,8 @@ export const getReplayedm3u8VariantHandler = async (req: Request, res: Response)
         const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
 
-        const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
-   
+        const actualVariant = variant.replace(new RegExp(escapeRegExp(streamId), "g"), stream.streamKey);
+
         const content = await streamService.getS3Content(
             `${stream.recordingKey}/${actualVariant}/index.m3u8`,
             stream.streamKey,
@@ -213,7 +222,7 @@ export const getReplayedm3u8VariantHandler = async (req: Request, res: Response)
     }
 }
 
-export const getReplayedm3u8SegmentHandler = async (req: Request, res: Response) => {
+export const getReplaySegment = async (req: Request, res: Response) => {
     try {
         const { username, streamId, variant, segment } = req.params as {
             username: string,
@@ -228,8 +237,16 @@ export const getReplayedm3u8SegmentHandler = async (req: Request, res: Response)
         const stream = await streamService.getStreamById(streamId);
         if (!stream?.recordingKey) return res.status(404).json({ message: "Recording not found" });
         //the stream is stored with prefix of streamKey and hence replace the incoming streamId request with streamKey
-        const actualVariant = variant.replace(new RegExp(streamId, "g"), stream.streamKey);
+        const actualVariant = variant.replace(new RegExp(escapeRegExp(streamId), "g"), stream.streamKey);
         const key = `${stream.recordingKey}/${actualVariant}/${segment}`;
+        console.log("REPLAY SEGMENT:", {
+            streamId,
+            streamKey: stream.streamKey,
+            variant,
+            actualVariant,
+            segment,
+            s3Key: key
+        });
 
         return pipeS3Stream(res, key);
     } catch (error: any) {
@@ -282,11 +299,19 @@ const sendM3u8 = async (res: Response, content?: string | null) => {
 };
 
 const pipeS3Stream = async (res: Response, key: string) => {
-    const response = await streamService.getS3Object(key);
-    res.setHeader("Content-Type", "video/mp2t");
-    res.setHeader("Cache-Control", "public, max-age=31536000");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    (response.Body as any).pipe(res);
+    try {
+        const response = await streamService.getS3Object(key);
+        res.setHeader("Content-Type", "video/mp2t");
+        res.setHeader("Cache-Control", "public, max-age=31536000");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        (response.Body as any).pipe(res);
+    } catch (error: any) {
+        if (error.name === "NoSuchKey" || error.Code === "NoSuchKey") {
+            console.error(`S3 NoSuchKey: ${key}`);
+            return res.status(404).json({ message: "Segment not found", key });
+        }
+        throw error;
+    }
 };
 
 
