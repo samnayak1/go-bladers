@@ -1,6 +1,23 @@
+FROM node:20-alpine AS dashboard
+
+ARG VITE_SERVER_BASE_URL=https://server.go-bladers.click
+ARG VITE_OBS=rtmp://server.go-bladers.click/stream
+
+WORKDIR /dashboard
+
+COPY gobladers-dashboard/package*.json ./
+RUN npm ci
+
+COPY gobladers-dashboard/ .
+
+# Build args override the values in gobladers-dashboard/.env
+RUN VITE_SERVER_BASE_URL=$VITE_SERVER_BASE_URL VITE_OBS=$VITE_OBS npm run build
+
 FROM alfg/nginx-rtmp
 
 ARG NGINX_CONFIG=nginx.conf
 
 COPY ${NGINX_CONFIG} /etc/nginx/nginx.conf
 COPY ${NGINX_CONFIG} /etc/nginx/nginx.conf.template
+
+COPY --from=dashboard /dashboard/dist /www/dashboard

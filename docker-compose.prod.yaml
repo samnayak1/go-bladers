@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.rtmp
       args:
         NGINX_CONFIG: nginx.prod.conf
+        VITE_SERVER_BASE_URL: https://server.go-bladers.click
+        VITE_OBS: rtmp://server.go-bladers.click/stream
 
     container_name: rtmp-server
 

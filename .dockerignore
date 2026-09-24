@@ -4,3 +4,6 @@ Dockerfile
 docker-compose.yml
 .git
 .gitignore
+**/node_modules
+gobladers-dashboard/dist
+gobladers-dashboard/.git

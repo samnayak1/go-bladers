@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.rtmp
       args:
         NGINX_CONFIG: nginx.conf
+        VITE_SERVER_BASE_URL: http://localhost:8080
+        VITE_OBS: rtmp://localhost:1935/stream
 
     container_name: rtmp-server
 
